@@ -12,10 +12,15 @@ app.use(express.static(path.join(__dirname, "public")));
 const rooms = {};
 
 io.on("connection", (socket) => {
-  socket.on("join-room", ({ roomId, userName }) => {
+  socket.on("join-room", ({ roomId, userName, isSpectator }) => {
     socket.join(roomId);
     if (!rooms[roomId]) {
-      rooms[roomId] = { users: {}, revealed: false, adminId: socket.id };
+      rooms[roomId] = {
+        users: {},
+        revealed: false,
+        adminId: socket.id,
+        revealedAt: null,
+      };
     }
 
     rooms[roomId].users[socket.id] = {
@@ -33,19 +38,8 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("reset-game", (roomId) => {
-    if (rooms[roomId] && rooms[roomId].adminId === socket.id) {
-      // Opcional: emitir um evento 'add-to-history' com os dados atuais antes de resetar
-      rooms[roomId].revealed = false;
-      Object.keys(rooms[roomId].users).forEach(
-        (id) => (rooms[roomId].users[id].vote = null),
-      );
-      io.to(roomId).emit("update-room", rooms[roomId]);
-    }
-  });
-
   socket.on("cast-vote", ({ roomId, vote }) => {
-    if (rooms[roomId]) {
+    if (rooms[roomId] && !rooms[roomId].users[socket.id].isSpectator) {
       rooms[roomId].users[socket.id].vote = vote;
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
@@ -54,6 +48,7 @@ io.on("connection", (socket) => {
   socket.on("reveal-votes", (roomId) => {
     if (rooms[roomId] && rooms[roomId].adminId === socket.id) {
       rooms[roomId].revealed = true;
+      rooms[roomId].revealedAt = Date.now(); // Timestamp para controle do histórico
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
   });
@@ -61,6 +56,7 @@ io.on("connection", (socket) => {
   socket.on("reset-game", (roomId) => {
     if (rooms[roomId] && rooms[roomId].adminId === socket.id) {
       rooms[roomId].revealed = false;
+      rooms[roomId].revealedAt = null;
       Object.keys(rooms[roomId].users).forEach(
         (id) => (rooms[roomId].users[id].vote = null),
       );
@@ -71,14 +67,20 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     for (const roomId in rooms) {
       if (rooms[roomId].users[socket.id]) {
+        const wasAdmin = rooms[roomId].adminId === socket.id;
         delete rooms[roomId].users[socket.id];
-        if (Object.keys(rooms[roomId].users).length === 0) delete rooms[roomId];
-        else io.to(roomId).emit("update-room", rooms[roomId]);
+
+        if (Object.keys(rooms[roomId].users).length === 0) {
+          delete rooms[roomId];
+        } else {
+          if (wasAdmin)
+            rooms[roomId].adminId = Object.keys(rooms[roomId].users)[0];
+          io.to(roomId).emit("update-room", rooms[roomId]);
+        }
       }
     }
   });
 });
 
 const PORT = process.env.PORT || 3000;
-
-server.listen(PORT, () => console.log(`Rodando na porta ${PORT}`));
+server.listen(PORT, () => console.log(`Rodando em http://localhost:${PORT}`));
