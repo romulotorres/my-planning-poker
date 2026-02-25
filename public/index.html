@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Planning Poker</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; }
+        .cards { display: flex; gap: 10px; margin-top: 20px; }
+        .card { width: 50px; height: 80px; border: 2px solid #333; display: flex; 
+                align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; background: white; }
+        .card:hover { background: #e0e0e0; }
+        .card.selected { background: #4CAF50; color: white; border-color: #2e7d32; }
+        .player-list { margin-top: 30px; width: 300px; }
+        .player { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; background: white; }
+        .admin-controls { margin-top: 20px; }
+        button { padding: 10px 20px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Planning Poker</h1>
+    <div id="login">
+        <input type="text" id="username" placeholder="Seu nome">
+        <button onclick="join()">Entrar na Sala</button>
+    </div>
+
+    <div id="game" style="display:none;">
+        <h3 id="room-display"></h3>
+        <div class="cards" id="deck"></div>
+        
+        <div class="admin-controls" id="admin-area" style="display:none;">
+            <button onclick="reveal()">Revelar Cartas</button>
+            <button onclick="reset()" style="background:#f44336">Reiniciar</button>
+        </div>
+
+        <div class="player-list" id="players"></div>
+        <h2 id="average-display"></h2>
+    </div>
+
+    <script>
+        const socket = io();
+        const fib = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, '?'];
+        let currentRoom = window.location.hash || '#geral';
+        let myVote = null;
+
+        function join() {
+            const name = document.getElementById('username').value;
+            if (!name) return alert("Digite seu nome!");
+            document.getElementById('login').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            document.getElementById('room-display').innerText = "Sala: " + currentRoom;
+            
+            socket.emit('join-room', { roomId: currentRoom, userName: name });
+            renderDeck();
+        }
+
+        function renderDeck() {
+            const deck = document.getElementById('deck');
+            deck.innerHTML = '';
+            fib.forEach(val => {
+                const btn = document.createElement('div');
+                btn.className = 'card';
+                btn.innerText = val;
+                btn.onclick = () => {
+                    myVote = val;
+                    socket.emit('cast-vote', { roomId: currentRoom, vote: val });
+                    renderDeck();
+                };
+                if (myVote === val) btn.classList.add('selected');
+                deck.appendChild(btn);
+            });
+        }
+
+        socket.on('update-room', (data) => {
+            const playersDiv = document.getElementById('players');
+            playersDiv.innerHTML = '<h4>Jogadores:</h4>';
+            let votes = [];
+
+            Object.entries(data.users).forEach(([id, user]) => {
+                const p = document.createElement('div');
+                p.className = 'player';
+                const displayVote = data.revealed ? (user.vote || '?') : (user.vote ? '✅' : '...');
+                p.innerHTML = `<span>${user.name}</span> <b>${displayVote}</b>`;
+                playersDiv.appendChild(p);
+                
+                if (data.revealed && typeof user.vote === 'number') votes.push(user.vote);
+            });
+
+            if (data.revealed && votes.length > 0) {
+                const avg = (votes.reduce((a, b) => a + b, 0) / votes.length).toFixed(1);
+                document.getElementById('average-display').innerText = "Média: " + avg;
+            } else {
+                document.getElementById('average-display').innerText = "";
+            }
+
+            if (socket.id === data.adminId) document.getElementById('admin-area').style.display = 'block';
+            if (!data.revealed && myVote === null) renderDeck(); // Reset visual local
+            if (!data.revealed && myVote !== null) { /* mantém seleção */ }
+            else if (!data.revealed) { myVote = null; renderDeck(); }
+        });
+
+        function reveal() { socket.emit('reveal-votes', currentRoom); }
+        function reset() { myVote = null; socket.emit('reset-game', currentRoom); }
+    </script>
+</body>
+</html>
