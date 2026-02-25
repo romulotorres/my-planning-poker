@@ -10,9 +10,12 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, "public")));
 
 const rooms = {};
+// Valores permitidos para evitar "votos engraçadinhos"
+const VALID_VOTES = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
 
 io.on("connection", (socket) => {
   socket.on("join-room", ({ roomId, userName, isSpectator }) => {
+    if (!roomId || !userName) return; // Validação básica de entrada
     socket.join(roomId);
     if (!rooms[roomId]) {
       rooms[roomId] = {
@@ -25,22 +28,28 @@ io.on("connection", (socket) => {
     rooms[roomId].users[socket.id] = {
       name: userName,
       vote: null,
-      isSpectator: isSpectator,
+      isSpectator: !!isSpectator,
     };
     io.to(roomId).emit("update-room", rooms[roomId]);
   });
 
   socket.on("change-name", ({ roomId, newName }) => {
-    if (rooms[roomId] && rooms[roomId].users[socket.id]) {
-      rooms[roomId].users[socket.id].name = newName;
+    if (rooms[roomId] && rooms[roomId].users[socket.id] && newName) {
+      rooms[roomId].users[socket.id].name = newName.substring(0, 20); // Limite de caracteres
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
   });
 
   socket.on("cast-vote", ({ roomId, vote }) => {
-    if (rooms[roomId] && !rooms[roomId].users[socket.id].isSpectator) {
-      rooms[roomId].users[socket.id].vote = vote;
-      io.to(roomId).emit("update-room", rooms[roomId]);
+    const room = rooms[roomId];
+    if (room && room.users[socket.id] && !room.users[socket.id].isSpectator) {
+      // CAMADA DE VALIDAÇÃO: Só aceita se o voto estiver na lista permitida
+      if (VALID_VOTES.includes(vote)) {
+        room.users[socket.id].vote = vote;
+        io.to(roomId).emit("update-room", room);
+      } else {
+        console.log(`Tentativa de voto inválido por ${socket.id}: ${vote}`);
+      }
     }
   });
 
@@ -82,4 +91,6 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Rodando em http://localhost:${PORT}`));
+server.listen(PORT, () =>
+  console.log(`Proteção ativa em http://localhost:${PORT}`),
+);
