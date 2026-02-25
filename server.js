@@ -18,8 +18,30 @@ io.on("connection", (socket) => {
       rooms[roomId] = { users: {}, revealed: false, adminId: socket.id };
     }
 
-    rooms[roomId].users[socket.id] = { name: userName, vote: null };
+    rooms[roomId].users[socket.id] = {
+      name: userName,
+      vote: null,
+      isSpectator: isSpectator,
+    };
     io.to(roomId).emit("update-room", rooms[roomId]);
+  });
+
+  socket.on("change-name", ({ roomId, newName }) => {
+    if (rooms[roomId] && rooms[roomId].users[socket.id]) {
+      rooms[roomId].users[socket.id].name = newName;
+      io.to(roomId).emit("update-room", rooms[roomId]);
+    }
+  });
+
+  socket.on("reset-game", (roomId) => {
+    if (rooms[roomId] && rooms[roomId].adminId === socket.id) {
+      // Opcional: emitir um evento 'add-to-history' com os dados atuais antes de resetar
+      rooms[roomId].revealed = false;
+      Object.keys(rooms[roomId].users).forEach(
+        (id) => (rooms[roomId].users[id].vote = null),
+      );
+      io.to(roomId).emit("update-room", rooms[roomId]);
+    }
   });
 
   socket.on("cast-vote", ({ roomId, vote }) => {

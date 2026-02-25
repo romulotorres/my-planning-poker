@@ -1,106 +1,460 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Simple Planning Poker</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Poker Sprint Pro</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; }
-        .cards { display: flex; gap: 10px; margin-top: 20px; }
-        .card { width: 50px; height: 80px; border: 2px solid #333; display: flex; 
-                align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; background: white; }
-        .card:hover { background: #e0e0e0; }
-        .card.selected { background: #4CAF50; color: white; border-color: #2e7d32; }
-        .player-list { margin-top: 30px; width: 300px; }
-        .player { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; background: white; }
-        .admin-controls { margin-top: 20px; }
-        button { padding: 10px 20px; cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 4px; }
+      :root {
+        --primary: #2c3e50;
+        --gold: #f1c40f;
+        --table: #27ae60;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #1a1a1a;
+        color: white;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      /* Mesa de Poker */
+      .poker-area {
+        position: relative;
+        width: 800px;
+        height: 400px;
+        margin: 50px auto;
+      }
+      .table-surface {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: var(--table);
+        border: 15px solid #5d4037;
+        border-radius: 200px;
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Jogadores ao redor da mesa */
+      .player-slot {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 100px;
+        transition: all 0.5s;
+      }
+      .avatar {
+        width: 60px;
+        height: 60px;
+        background: #444;
+        border-radius: 50%;
+        margin: 0 auto 5px;
+        border: 3px solid #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
+      .is-adm {
+        border-color: var(--gold) !important;
+        box-shadow: 0 0 10px var(--gold);
+      }
+
+      /* Cartas */
+      .card-slot {
+        width: 40px;
+        height: 60px;
+        background: #ddd;
+        border-radius: 5px;
+        margin: 5px auto;
+        color: #222;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+      }
+      .card-hidden {
+        background: repeating-linear-gradient(
+          45deg,
+          #c0392b,
+          #c0392b 5px,
+          #962d22 5px,
+          #962d22 10px
+        );
+      }
+      .revealed {
+        transform: rotateY(360deg);
+        background: white;
+      }
+
+      /* Controles Inferiores */
+      .controls {
+        background: #222;
+        padding: 20px;
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        border-top: 2px solid #444;
+      }
+      .fib-card {
+        width: 45px;
+        height: 70px;
+        background: white;
+        color: #333;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        transition: 0.2s;
+      }
+      .fib-card:hover {
+        transform: translateY(-10px);
+        background: var(--gold);
+      }
+      .fib-card.active {
+        background: #3498db;
+        color: white;
+      }
+
+      /* Painel Lateral (Stats) */
+      .stats-panel {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 15px;
+        border-radius: 10px;
+        width: 220px;
+      }
+      canvas {
+        max-width: 100%;
+      }
+
+      .spectator-tag {
+        font-size: 10px;
+        color: #aaa;
+        text-transform: uppercase;
+      }
+
+      .history-container {
+        width: 800px;
+        margin: 40px auto 100px;
+        background: #222;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #444;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #333;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      th {
+        color: var(--gold);
+      }
+
+      .tag-vote {
+        background: #444;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-right: 4px;
+        font-size: 11px;
+      }
     </style>
-</head>
-<body>
-    <h1>Planning Poker</h1>
-    <div id="login">
-        <input type="text" id="username" placeholder="Seu nome">
-        <button onclick="join()">Entrar na Sala</button>
+  </head>
+  <body>
+    <div id="login-screen" style="margin-top: 100px">
+      <input type="text" id="username" placeholder="Seu Nome" />
+      <label><input type="checkbox" id="isSpectator" /> Apenas Observar</label>
+      <button
+        onclick="join()"
+        style="
+          padding: 10px 20px;
+          background: var(--table);
+          color: white;
+          border: none;
+          cursor: pointer;
+        "
+      >
+        Entrar
+      </button>
     </div>
 
-    <div id="game" style="display:none;">
-        <h3 id="room-display"></h3>
-        <div class="cards" id="deck"></div>
-        
-        <div class="admin-controls" id="admin-area" style="display:none;">
-            <button onclick="reveal()">Revelar Cartas</button>
-            <button onclick="reset()" style="background:#f44336">Reiniciar</button>
-        </div>
+    <div id="game-screen" style="display: none; width: 100%">
+      <div class="stats-panel">
+        <h4 id="agreement-title">Concordância: 0%</h4>
+        <canvas id="chartVotes"></canvas>
+        <div id="vote-summary" style="font-size: 12px; margin-top: 10px"></div>
+      </div>
 
-        <div class="player-list" id="players"></div>
-        <h2 id="average-display"></h2>
+      <div class="poker-area">
+        <div class="table-surface"></div>
+        <div id="players-container"></div>
+      </div>
+
+      <div class="controls">
+        <div id="cards-deck"></div>
+        <div
+          id="admin-actions"
+          style="
+            border-left: 1px solid #444;
+            padding-left: 15px;
+            margin-left: 15px;
+          "
+        >
+          <button onclick="reveal()">Revelar 👁️</button>
+          <button onclick="reset()">Limpar 🧹</button>
+          <button onclick="changeName()" style="background: gray">
+            Mudar Nome ✏️
+          </button>
+        </div>
+      </div>
+      <div class="history-container">
+        <h3>📜 Histórico de Votações</h3>
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Média</th>
+              <th>Concordância</th>
+              <th>Votos</th>
+            </tr>
+          </thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
     </div>
 
     <script>
-        const socket = io();
-        const fib = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, '?'];
-        let currentRoom = window.location.hash || '#geral';
-        let myVote = null;
+      const socket = io();
+      const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
+      let myId,
+        currentRoom = window.location.hash || "#scrum";
+      let myVote = null;
+      let chart = null;
 
-        function join() {
-            const name = document.getElementById('username').value;
-            if (!name) return alert("Digite seu nome!");
-            document.getElementById('login').style.display = 'none';
-            document.getElementById('game').style.display = 'block';
-            document.getElementById('room-display').innerText = "Sala: " + currentRoom;
-            
-            socket.emit('join-room', { roomId: currentRoom, userName: name });
+      function join() {
+        const userName = document.getElementById("username").value;
+        const isSpectator = document.getElementById("isSpectator").checked;
+        if (!userName) return alert("Nome obrigatório");
+
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("game-screen").style.display = "block";
+
+        socket.emit("join-room", {
+          roomId: currentRoom,
+          userName,
+          isSpectator,
+        });
+        renderDeck();
+      }
+
+      function changeName() {
+        const newName = prompt("Novo nome:");
+        if (newName)
+          socket.emit("change-name", { roomId: currentRoom, newName });
+      }
+
+      function renderDeck() {
+        const deck = document.getElementById("cards-deck");
+        deck.innerHTML = "";
+        fib.forEach((v) => {
+          const b = document.createElement("button");
+          b.className = `fib-card ${myVote === v ? "active" : ""}`;
+          b.innerText = v;
+          b.onclick = () => {
+            myVote = v;
+            socket.emit("cast-vote", { roomId: currentRoom, vote: v });
             renderDeck();
-        }
+          };
+          deck.appendChild(b);
+        });
+      }
 
-        function renderDeck() {
-            const deck = document.getElementById('deck');
-            deck.innerHTML = '';
-            fib.forEach(val => {
-                const btn = document.createElement('div');
-                btn.className = 'card';
-                btn.innerText = val;
-                btn.onclick = () => {
-                    myVote = val;
-                    socket.emit('cast-vote', { roomId: currentRoom, vote: val });
-                    renderDeck();
-                };
-                if (myVote === val) btn.classList.add('selected');
-                deck.appendChild(btn);
-            });
-        }
+      socket.on("update-room", (data) => {
+        const container = document.getElementById("players-container");
+        container.innerHTML = "";
+        const users = Object.entries(data.users);
+        const votesCount = {};
 
-        socket.on('update-room', (data) => {
-            const playersDiv = document.getElementById('players');
-            playersDiv.innerHTML = '<h4>Jogadores:</h4>';
-            let votes = [];
+        users.forEach(([id, user], index) => {
+          // Posicionamento circular simples
+          const angle = (index / users.length) * 2 * Math.PI;
+          const x = 400 + 320 * Math.cos(angle);
+          const y = 200 + 150 * Math.sin(angle);
 
-            Object.entries(data.users).forEach(([id, user]) => {
-                const p = document.createElement('div');
-                p.className = 'player';
-                const displayVote = data.revealed ? (user.vote || '?') : (user.vote ? '✅' : '...');
-                p.innerHTML = `<span>${user.name}</span> <b>${displayVote}</b>`;
-                playersDiv.appendChild(p);
-                
-                if (data.revealed && typeof user.vote === 'number') votes.push(user.vote);
-            });
+          const slot = document.createElement("div");
+          slot.className = "player-slot";
+          slot.style.left = x + "px";
+          slot.style.top = y + "px";
 
-            if (data.revealed && votes.length > 0) {
-                const avg = (votes.reduce((a, b) => a + b, 0) / votes.length).toFixed(1);
-                document.getElementById('average-display').innerText = "Média: " + avg;
-            } else {
-                document.getElementById('average-display').innerText = "";
-            }
+          const isAdm = id === data.adminId;
+          const hasVoted = user.vote !== null;
+          const voteDisplay = data.revealed ? user.vote : hasVoted ? "✓" : "";
 
-            if (socket.id === data.adminId) document.getElementById('admin-area').style.display = 'block';
-            if (!data.revealed && myVote === null) renderDeck(); // Reset visual local
-            if (!data.revealed && myVote !== null) { /* mantém seleção */ }
-            else if (!data.revealed) { myVote = null; renderDeck(); }
+          slot.innerHTML = `
+                    <div class="avatar ${isAdm ? "is-adm" : ""}">${isAdm ? "👑" : "👤"}</div>
+                    <div style="font-size:12px">${user.name} ${user.isSpectator ? '<span class="spectator-tag">(Obs)</span>' : ""}</div>
+                    ${!user.isSpectator ? `<div class="card-slot ${data.revealed ? "revealed" : hasVoted ? "card-hidden" : ""}">${voteDisplay || ""}</div>` : ""}
+                `;
+          container.appendChild(slot);
+
+          // Contagem para o gráfico
+          if (data.revealed && !user.isSpectator && user.vote) {
+            votesCount[user.vote] = (votesCount[user.vote] || 0) + 1;
+          }
         });
 
-        function reveal() { socket.emit('reveal-votes', currentRoom); }
-        function reset() { myVote = null; socket.emit('reset-game', currentRoom); }
+        if (data.revealed)
+          updateStats(
+            votesCount,
+            users.filter((u) => !u[1].isSpectator).length,
+          );
+        if (!data.revealed) {
+          if (chart) chart.destroy();
+          document.getElementById("vote-summary").innerHTML = "";
+        }
+
+        let lastRevealedRoomId = null; // Variável global para evitar duplicados no histórico
+
+        socket.on("update-room", (data) => {
+          // ... (mantenha a lógica anterior de renderizar jogadores e gráfico) ...
+
+          if (data.revealed) {
+            const stats = calculateStats(data.users); // Função auxiliar
+            updateStats(stats.counts, stats.totalPlayers);
+
+            // Se acabou de revelar e ainda não está no histórico
+            if (lastRevealedRoomId !== data.revealedAt) {
+              addToHistory(stats);
+              lastRevealedRoomId = data.revealedAt; // Você precisaria adicionar um timestamp no server quando revela
+            }
+          } else {
+            lastRevealedRoomId = null;
+            // ...
+          }
+        });
+
+        function addToHistory(stats) {
+          const tbody = document.getElementById("history-body");
+          const row = document.createElement("tr");
+          const now = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+          // Formata os votos para o histórico: "5 (3x), 8 (2x)"
+          const votesSummary = Object.entries(stats.counts)
+            .map(([v, c]) => `<span class="tag-vote">${v} (x${c})</span>`)
+            .join(" ");
+
+          row.innerHTML = `
+        <td>${now}</td>
+        <td><b>${stats.average}</b></td>
+        <td>${stats.agreement}%</td>
+        <td>${votesSummary}</td>
+    `;
+          tbody.prepend(row); // Adiciona no topo
+        }
+
+        function calculateStats(users) {
+          const counts = {};
+          let sum = 0;
+          let validVotes = 0;
+          let totalPlayers = 0;
+
+          Object.values(users).forEach((u) => {
+            if (!u.isSpectator) {
+              totalPlayers++;
+              if (u.vote && u.vote !== "?" && u.vote !== "☕") {
+                counts[u.vote] = (counts[u.vote] || 0) + 1;
+                sum += typeof u.vote === "number" ? u.vote : 0; // Ajuste se usar números
+                validVotes++;
+              } else if (u.vote) {
+                counts[u.vote] = (counts[u.vote] || 0) + 1;
+              }
+            }
+          });
+
+          const maxVotes = Math.max(...Object.values(counts), 0);
+          return {
+            counts,
+            average: validVotes > 0 ? (sum / validVotes).toFixed(1) : "-",
+            agreement:
+              totalPlayers > 0
+                ? Math.round((maxVotes / totalPlayers) * 100)
+                : 0,
+            totalPlayers,
+          };
+        }
+      });
+
+      function updateStats(counts, totalPlayers) {
+        const labels = Object.keys(counts);
+        const values = Object.values(counts);
+
+        // Lógica de concordância (maior grupo / total)
+        const maxVotes = Math.max(...values, 0);
+        const agreement =
+          totalPlayers > 0 ? Math.round((maxVotes / totalPlayers) * 100) : 0;
+
+        document.getElementById("agreement-title").innerText =
+          `Concordância: ${agreement}%`;
+
+        if (agreement === 100 && totalPlayers > 1) {
+          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+
+        const ctx = document.getElementById("chartVotes").getContext("2d");
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                data: values,
+                backgroundColor: [
+                  "#3498db",
+                  "#e74c3c",
+                  "#f1c40f",
+                  "#9b59b6",
+                  "#1abc9c",
+                ],
+              },
+            ],
+          },
+          options: { plugins: { legend: { display: false } } },
+        });
+      }
+
+      function reveal() {
+        socket.emit("reveal-votes", currentRoom);
+      }
+      function reset() {
+        myVote = null;
+        socket.emit("reset-game", currentRoom);
+        renderDeck();
+      }
     </script>
-</body>
+  </body>
 </html>
