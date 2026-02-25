@@ -27,7 +27,7 @@
         overflow-x: hidden;
       }
 
-      /* Banner de desconexão */
+      /* Banner de desconexão aprimorado */
       #conn-status {
         position: fixed;
         top: 0;
@@ -36,12 +36,35 @@
         background: var(--danger);
         color: white;
         text-align: center;
-        padding: 5px;
+        padding: 10px;
         font-weight: bold;
         z-index: 9999;
         display: none;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
+      .btn-reconnect {
+        background: white;
+        color: var(--danger);
+        border: none;
+        padding: 4px 12px;
+        border-radius: 4px;
+        margin-left: 15px;
+        cursor: pointer;
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+      .btn-reconnect:hover {
+        background: #fdfdfd;
+        transform: scale(1.05);
+      }
+      .btn-reconnect:disabled {
+        opacity: 0.6;
+        cursor: wait;
       }
 
+      /* Estilos base mantidos */
       #login-screen {
         background: var(--card-bg);
         padding: 40px;
@@ -249,11 +272,27 @@
       .btn-action:disabled {
         background: #444 !important;
         opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-copy {
+        background: #555;
+        color: white;
+        font-size: 12px;
+        padding: 5px 10px;
       }
     </style>
   </head>
   <body>
-    <div id="conn-status">⚠️ Conexão perdida. Tentando reconectar...</div>
+    <div id="conn-status">
+      <span>⚠️ Conexão perdida com o servidor.</span>
+      <button
+        id="reconnect-trigger"
+        class="btn-reconnect"
+        onclick="manualReconnect()"
+      >
+        Tentar Reconectar
+      </button>
+    </div>
 
     <div id="login-screen">
       <h2 style="margin-top: 0">🃏 Poker Sprint Pro</h2>
@@ -346,7 +385,11 @@
     </div>
 
     <script>
-      const socket = io();
+      const socket = io({
+        reconnectionAttempts: 10,
+        timeout: 10000,
+      });
+
       const fibCards = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
       let currentRoomId = "";
       let myVote = null;
@@ -363,8 +406,11 @@
 
       socket.on("connect", () => {
         document.getElementById("conn-status").style.display = "none";
+        document.getElementById("reconnect-trigger").innerText =
+          "Tentar Reconectar";
+        document.getElementById("reconnect-trigger").disabled = false;
         toggleControls(false);
-        // Reentrar na sala automaticamente se já estiver logado
+
         if (currentRoomId) {
           const name = document.getElementById("username").value;
           socket.emit("join-room", {
@@ -375,8 +421,17 @@
         }
       });
 
+      function manualReconnect() {
+        const btn = document.getElementById("reconnect-trigger");
+        btn.disabled = true;
+        btn.innerText = "Conectando...";
+        socket.connect();
+      }
+
       function toggleControls(disable) {
-        const buttons = document.querySelectorAll(".fib-card, .btn-action");
+        const buttons = document.querySelectorAll(
+          ".fib-card, .btn-action:not(.btn-reconnect)",
+        );
         buttons.forEach((btn) => (btn.disabled = disable));
       }
 
