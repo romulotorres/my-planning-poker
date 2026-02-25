@@ -14,6 +14,7 @@
         --table: #1b5e20;
         --bg: #121212;
         --card-bg: #1e1e1e;
+        --danger: #e74c3c;
       }
       body {
         font-family: "Segoe UI", sans-serif;
@@ -24,6 +25,21 @@
         flex-direction: column;
         align-items: center;
         overflow-x: hidden;
+      }
+
+      /* Banner de desconexão */
+      #conn-status {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: var(--danger);
+        color: white;
+        text-align: center;
+        padding: 5px;
+        font-weight: bold;
+        z-index: 9999;
+        display: none;
       }
 
       #login-screen {
@@ -70,8 +86,6 @@
         transition: all 0.5s;
         z-index: 5;
       }
-
-      /* Seu avatar com background personalizado #689 */
       .avatar {
         width: 45px;
         height: 45px;
@@ -150,10 +164,10 @@
         cursor: pointer;
         font-size: 18px;
         font-weight: bold;
-        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transition: 0.3s;
         box-shadow: 0 3px 0 #bbb;
       }
-      .fib-card:hover {
+      .fib-card:hover:not(:disabled) {
         transform: translateY(-12px);
         background: var(--gold);
       }
@@ -162,6 +176,10 @@
         color: white;
         transform: translateY(-8px);
         box-shadow: 0 3px 0 #0d47a1;
+      }
+      .fib-card:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
 
       .side-panel {
@@ -175,14 +193,6 @@
         border: 1px solid #444;
         text-align: center;
         z-index: 10;
-      }
-      #agg-text {
-        margin: 0 0 8px 0;
-        font-size: 14px;
-        color: var(--gold);
-        display: block;
-        width: 100%;
-        text-align: center;
       }
       #room-info {
         position: fixed;
@@ -219,9 +229,7 @@
         padding: 12px;
         border-bottom: 1px solid #333;
         text-align: center;
-        font-size: 14px;
       }
-
       tr:first-child td {
         background: rgba(33, 150, 243, 0.1);
         font-weight: bold;
@@ -238,15 +246,15 @@
         cursor: pointer;
         transition: 0.2s;
       }
-      .btn-copy {
-        background: #555;
-        color: white;
-        font-size: 12px;
-        padding: 5px 10px;
+      .btn-action:disabled {
+        background: #444 !important;
+        opacity: 0.5;
       }
     </style>
   </head>
   <body>
+    <div id="conn-status">⚠️ Conexão perdida. Tentando reconectar...</div>
+
     <div id="login-screen">
       <h2 style="margin-top: 0">🃏 Poker Sprint Pro</h2>
       <input type="text" id="username" placeholder="Seu apelido..." />
@@ -283,7 +291,9 @@
       </div>
 
       <div class="side-panel">
-        <span id="agg-text">Concordância: 0%</span>
+        <span id="agg-text" style="color: var(--gold); font-size: 14px"
+          >Concordância: 0%</span
+        >
         <canvas id="chartVotes"></canvas>
       </div>
 
@@ -311,14 +321,14 @@
           "
         >
           <button
-            class="btn-action"
+            class="btn-action admin-btn"
             style="background: #4caf50; color: white; margin-right: 8px"
             onclick="reveal()"
           >
             REVELAR
           </button>
           <button
-            class="btn-action"
+            class="btn-action admin-btn"
             style="background: #f44336; color: white"
             onclick="reset()"
           >
@@ -345,12 +355,37 @@
       let isSpectatorMode = false;
       let currentAverage = "-";
 
+      // LÓGICA DE STATUS DE CONEXÃO
+      socket.on("disconnect", () => {
+        document.getElementById("conn-status").style.display = "block";
+        toggleControls(true);
+      });
+
+      socket.on("connect", () => {
+        document.getElementById("conn-status").style.display = "none";
+        toggleControls(false);
+        // Reentrar na sala automaticamente se já estiver logado
+        if (currentRoomId) {
+          const name = document.getElementById("username").value;
+          socket.emit("join-room", {
+            roomId: currentRoomId,
+            userName: name,
+            isSpectator: isSpectatorMode,
+          });
+        }
+      });
+
+      function toggleControls(disable) {
+        const buttons = document.querySelectorAll(".fib-card, .btn-action");
+        buttons.forEach((btn) => (btn.disabled = disable));
+      }
+
       const centerTextPlugin = {
         id: "centerText",
         afterDraw: (chart) => {
           const {
             ctx,
-            chartArea: { top, bottom, left, right, width, height },
+            chartArea: { top, left, width, height },
           } = chart;
           ctx.save();
           ctx.font = "bold 24px Segoe UI";
@@ -445,7 +480,7 @@
                         ${isAdm ? '<span class="adm-crown">👑</span>' : ""}
                         ${user.isSpectator ? "👁️" : "👤"}
                     </div>
-                    <div style="font-size:11px; margin-top:3px; text-shadow: 1px 1px 2px black;">${user.name}</div>
+                    <div style="font-size:11px; margin-top:3px;">${user.name}</div>
                     ${
                       !user.isSpectator
                         ? `
@@ -523,14 +558,7 @@
             ],
           },
           options: {
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: (c) => ` Valor: ${c.label} - ${c.raw} Votos`,
-                },
-              },
-            },
+            plugins: { legend: { display: false } },
             cutout: "75%",
           },
           plugins: [centerTextPlugin],
