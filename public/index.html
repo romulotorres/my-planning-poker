@@ -1,248 +1,536 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planning Poker Elite</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --gold: #f1c40f; --table: #1b5e20; --bg: #121212; --card-bg: #1e1e1e; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
-        
-        #login-screen { background: var(--card-bg); padding: 40px; border-radius: 15px; margin-top: 100px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
-        input[type="text"] { padding: 12px; border-radius: 5px; border: none; margin-bottom: 15px; width: 250px; font-size: 16px; }
+      :root {
+        --primary: #2c3e50;
+        --gold: #f1c40f;
+        --table: #1b5e20;
+        --bg: #121212;
+        --card-bg: #1e1e1e;
+      }
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: white;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-x: hidden;
+      }
 
-        /* Mesa Ajustada */
-        .poker-area { position: relative; width: 700px; height: 350px; margin: 40px auto 60px; }
-        .table-surface { position: absolute; width: 100%; height: 100%; background: var(--table); border: 12px solid #3e2723; border-radius: 180px; box-shadow: inset 0 0 50px rgba(0,0,0,0.7); }
-        
-        /* Jogadores com posicionamento interno */
-        .player-slot { position: absolute; transform: translate(-50%, -50%); text-align: center; width: 90px; transition: all 0.5s; z-index: 5; }
-        .avatar { width: 45px; height: 45px; background: #2c3e50; border-radius: 50%; margin: 0 auto 5px; border: 2px solid #555; display: flex; align-items: center; justify-content: center; font-size: 18px; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .is-adm { border-color: var(--gold); box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
-        .adm-crown { position: absolute; top: -14px; font-size: 16px; }
+      #login-screen {
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 15px;
+        margin-top: 60px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        width: 320px;
+      }
+      input[type="text"] {
+        padding: 12px;
+        border-radius: 5px;
+        border: 1px solid #444;
+        background: #121212;
+        color: white;
+        margin-bottom: 15px;
+        width: 90%;
+        font-size: 16px;
+      }
 
-        .card-slot { width: 38px; height: 55px; background: #fff; border-radius: 4px; margin: 5px auto; color: #222; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.4s; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        .card-hidden { background: linear-gradient(135deg, #c62828 25%, #b71c1c 25%, #b71c1c 50%, #c62828 50%, #c62828 75%, #b71c1c 75%, #b71c1c 100%); background-size: 8px 8px; border: 1px solid #7f1d1d; }
+      .poker-area {
+        position: relative;
+        width: 700px;
+        height: 350px;
+        margin: 40px auto 60px;
+      }
+      .table-surface {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: var(--table);
+        border: 12px solid #3e2723;
+        border-radius: 180px;
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7);
+      }
 
-        /* Barra de Controle Inferior Centralizada */
-        .controls { background: #181818; padding: 15px 0; width: 100vw; position: fixed; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 12px; border-top: 2px solid #333; z-index: 100; box-shadow: 0 -5px 20px rgba(0,0,0,0.5); }
-        .fib-card { width: 42px; height: 62px; background: white; color: #333; border-radius: 5px; border: none; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 3px 0 #bbb; }
-        .fib-card:hover { transform: translateY(-12px); background: var(--gold); box-shadow: 0 5px 15px rgba(241, 196, 15, 0.4); }
-        .fib-card.active { background: #2196F3; color: white; transform: translateY(-8px); box-shadow: 0 3px 0 #0d47a1; }
+      .player-slot {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        width: 90px;
+        transition: all 0.5s;
+        z-index: 5;
+      }
+      .avatar {
+        width: 45px;
+        height: 45px;
+        background: #2c3e50;
+        border-radius: 50%;
+        margin: 0 auto 5px;
+        border: 2px solid #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        position: relative;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      .is-adm {
+        border-color: var(--gold);
+        box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+      }
+      .adm-crown {
+        position: absolute;
+        top: -14px;
+        font-size: 16px;
+      }
 
-        /* Painel Lateral e Gráfico */
-        .side-panel { position: fixed; right: 20px; top: 20px; width: 200px; background: rgba(30,30,30,0.95); padding: 15px; border-radius: 12px; border: 1px solid #444; text-align: center; z-index: 10; }
-        #agg-text { margin: 0 0 10px 0; font-size: 16px; color: var(--gold); display: block; width: 100%; text-align: center; }
+      .card-slot {
+        width: 38px;
+        height: 55px;
+        background: #fff;
+        border-radius: 4px;
+        margin: 5px auto;
+        color: #222;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.4s;
+        font-size: 16px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      }
+      .card-hidden {
+        background: linear-gradient(
+          135deg,
+          #c62828 25%,
+          #b71c1c 25%,
+          #b71c1c 50%,
+          #c62828 50%,
+          #c62828 75%,
+          #b71c1c 75%,
+          #b71c1c 100%
+        );
+        background-size: 8px 8px;
+        border: 1px solid #7f1d1d;
+      }
 
-        /* Histórico */
-        .history-section { width: 700px; margin: 60px auto 140px; background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th { color: #888; text-transform: uppercase; font-size: 12px; padding: 10px; border-bottom: 2px solid #333; }
-        td { padding: 12px; border-bottom: 1px solid #333; text-align: center; font-size: 14px; }
-        tr:first-child td { background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196F3; font-weight: bold; }
+      .controls {
+        background: #181818;
+        padding: 15px 0;
+        width: 100vw;
+        position: fixed;
+        bottom: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        border-top: 2px solid #333;
+        z-index: 100;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+      }
+      .fib-card {
+        width: 42px;
+        height: 62px;
+        background: white;
+        color: #333;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 3px 0 #bbb;
+      }
+      .fib-card:hover {
+        transform: translateY(-12px);
+        background: var(--gold);
+      }
+      .fib-card.active {
+        background: #2196f3;
+        color: white;
+        transform: translateY(-8px);
+        box-shadow: 0 3px 0 #0d47a1;
+      }
 
-        .btn-action { padding: 10px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-action:active { transform: scale(0.95); }
+      .side-panel {
+        position: fixed;
+        right: 20px;
+        top: 20px;
+        width: 200px;
+        background: rgba(30, 30, 30, 0.95);
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid #444;
+        text-align: center;
+        z-index: 10;
+      }
+      #room-info {
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        background: rgba(30, 30, 30, 0.95);
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid #444;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .history-section {
+        width: 700px;
+        margin: 60px auto 140px;
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #333;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #333;
+        text-align: center;
+      }
+      tr:first-child td {
+        background: rgba(33, 150, 243, 0.1);
+        border-left: 4px solid #2196f3;
+        font-weight: bold;
+      }
+
+      .btn-action {
+        padding: 10px 20px;
+        border-radius: 6px;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn-copy {
+        background: #555;
+        color: white;
+        font-size: 12px;
+        padding: 5px 10px;
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div id="login-screen">
-        <h2 style="margin-top:0">🃏 Poker Sprint Pro</h2>
-        <input type="text" id="username" placeholder="Seu apelido..."><br>
-        <label style="cursor:pointer"><input type="checkbox" id="isSpectator"> Apenas observar (Espectador)</label><br><br>
-        <button class="btn-action" style="background:var(--table); color:white; width: 100%;" onclick="join()">ENTRAR NA MESA</button>
+      <h2 style="margin-top: 0">🃏 Poker Sprint Pro</h2>
+      <input type="text" id="username" placeholder="Seu apelido..." />
+      <input type="text" id="roomName" placeholder="Nome da sala..." />
+      <label
+        style="
+          cursor: pointer;
+          font-size: 14px;
+          display: block;
+          margin-bottom: 20px;
+        "
+      >
+        <input type="checkbox" id="isSpectator" /> Apenas observar
+      </label>
+      <button
+        class="btn-action"
+        style="background: var(--table); color: white; width: 100%"
+        onclick="join()"
+      >
+        ENTRAR NA MESA
+      </button>
     </div>
 
-    <div id="game-screen" style="display:none; width: 100%;">
-        <div class="side-panel">
-            <span id="agg-text">Concordância: 0%</span>
-            <canvas id="chartVotes"></canvas>
-            <div id="average-text" style="margin-top:10px; font-weight:bold; font-size: 18px;"></div>
-        </div>
+    <div id="game-screen" style="display: none; width: 100%">
+      <div id="room-info">
+        <span
+          id="display-room-name"
+          style="font-weight: bold; color: var(--gold)"
+          >SALA: -</span
+        >
+        <button class="btn-action btn-copy" id="btn-copy" onclick="copyLink()">
+          Copiar Link 🔗
+        </button>
+      </div>
 
-        <div class="poker-area">
-            <div class="table-surface"></div>
-            <div id="players-container"></div>
-        </div>
+      <div class="side-panel">
+        <span id="agg-text" style="color: var(--gold); font-size: 16px"
+          >Concordância: 0%</span
+        >
+        <canvas id="chartVotes"></canvas>
+        <div
+          id="average-text"
+          style="margin-top: 10px; font-weight: bold; font-size: 18px"
+        ></div>
+      </div>
 
-        <div class="history-section">
-            <h3 style="margin:0; display:flex; align-items:center; gap:10px;">📜 Histórico de Decisões</h3>
-            <table>
-                <thead>
-                    <tr><th>Hora</th><th>Média</th><th>Concordância</th></tr>
-                </thead>
-                <tbody id="history-body"></tbody>
-            </table>
-        </div>
+      <div class="poker-area">
+        <div class="table-surface"></div>
+        <div id="players-container"></div>
+      </div>
 
-        <div class="controls" id="controls-bar">
-            <div id="cards-deck" style="display: flex; gap: 8px;"></div>
-            <div id="admin-controls" style="display:none; margin-left:20px; border-left: 2px solid #444; padding-left:20px">
-                <button class="btn-action" style="background:#4caf50; color:white; margin-right:8px" onclick="reveal()">REVELAR 👁️</button>
-                <button class="btn-action" style="background:#f44336; color:white" onclick="reset()">LIMPAR 🧹</button>
-            </div>
-            <button class="btn-action" style="background:#444; color:white; margin-left:10px" onclick="changeName()">✏️</button>
+      <div class="history-section">
+        <h3 style="margin: 0">📜 Histórico</h3>
+        <table>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+
+      <div class="controls">
+        <div id="cards-deck" style="display: flex; gap: 8px"></div>
+        <div
+          id="admin-controls"
+          style="
+            display: none;
+            margin-left: 20px;
+            border-left: 2px solid #444;
+            padding-left: 20px;
+          "
+        >
+          <button
+            class="btn-action"
+            style="background: #4caf50; color: white; margin-right: 8px"
+            onclick="reveal()"
+          >
+            REVELAR
+          </button>
+          <button
+            class="btn-action"
+            style="background: #f44336; color: white"
+            onclick="reset()"
+          >
+            LIMPAR
+          </button>
         </div>
+        <button
+          class="btn-action"
+          style="background: #444; color: white; margin-left: 10px"
+          onclick="changeName()"
+        >
+          ✏️
+        </button>
+      </div>
     </div>
 
     <script>
-        const socket = io();
-        const fibCards = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, '☕', '?'];
-        let currentRoom = window.location.hash || '#planning';
-        let myVote = null;
-        let chart = null;
-        let lastHistoryId = null;
-        let isSpectatorMode = false;
+      const socket = io();
+      const fibCards = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
+      let currentRoomId = "";
+      let myVote = null;
+      let chart = null;
+      let lastHistoryId = null;
+      let isSpectatorMode = false;
 
-        function join() {
-            const name = document.getElementById('username').value;
-            isSpectatorMode = document.getElementById('isSpectator').checked;
-            if(!name) return alert("Por favor, digite seu nome.");
-            
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'block';
-            
-            // Oculta a barra de cartas para espectadores
-            if(isSpectatorMode) document.getElementById('cards-deck').style.display = 'none';
+      // Auto-preenche a sala se estiver no hash da URL
+      if (window.location.hash) {
+        document.getElementById("roomName").value = decodeURIComponent(
+          window.location.hash.substring(1),
+        );
+      }
 
-            socket.emit('join-room', { roomId: currentRoom, userName: name, isSpectator: isSpectatorMode });
-            renderDeck();
-        }
+      function join() {
+        const name = document.getElementById("username").value;
+        const room = document
+          .getElementById("roomName")
+          .value.trim()
+          .replace(/\s+/g, "-");
+        isSpectatorMode = document.getElementById("isSpectator").checked;
 
-        function renderDeck() {
-            if(isSpectatorMode) return;
-            const deck = document.getElementById('cards-deck');
-            deck.innerHTML = '';
-            fibCards.forEach(val => {
-                const b = document.createElement('button');
-                b.className = `fib-card ${myVote === val ? 'active' : ''}`;
-                b.innerText = val;
-                b.onclick = () => {
-                    myVote = val;
-                    socket.emit('cast-vote', { roomId: currentRoom, vote: val });
-                    renderDeck();
-                };
-                deck.appendChild(b);
-            });
-        }
+        if (!name || !room) return alert("Preencha nome e sala.");
 
-        socket.on('clear-local-votes', () => {
-            myVote = null;
-            renderDeck();
+        currentRoomId = room;
+        window.location.hash = room;
+
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("game-screen").style.display = "block";
+        document.getElementById("display-room-name").innerText =
+          `SALA: ${room.toUpperCase()}`;
+
+        if (isSpectatorMode)
+          document.getElementById("cards-deck").style.display = "none";
+
+        socket.emit("join-room", {
+          roomId: currentRoomId,
+          userName: name,
+          isSpectator: isSpectatorMode,
         });
+        renderDeck();
+      }
 
-        socket.on('update-room', (data) => {
-            const container = document.getElementById('players-container');
-            container.innerHTML = '';
-            const usersEntries = Object.entries(data.users);
-            
-            usersEntries.forEach(([id, user], index) => {
-                // Ajuste de raio para manter os players dentro da mesa (R_X e R_Y diferentes)
-                const angle = (index / usersEntries.length) * 2 * Math.PI;
-                const x = 350 + 290 * Math.cos(angle); 
-                const y = 175 + 115 * Math.sin(angle); // Raio Y menor (115) evita que saiam em cima/baixo
+      function copyLink() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+          const btn = document.getElementById("btn-copy");
+          btn.innerText = "Copiado! ✅";
+          setTimeout(() => (btn.innerText = "Copiar Link 🔗"), 2000);
+        });
+      }
 
-                const slot = document.createElement('div');
-                slot.className = 'player-slot';
-                slot.style.left = x + 'px';
-                slot.style.top = y + 'px';
+      function renderDeck() {
+        if (isSpectatorMode) return;
+        const deck = document.getElementById("cards-deck");
+        deck.innerHTML = "";
+        fibCards.forEach((val) => {
+          const b = document.createElement("button");
+          b.className = `fib-card ${myVote === val ? "active" : ""}`;
+          b.innerText = val;
+          b.onclick = () => {
+            myVote = val;
+            socket.emit("cast-vote", { roomId: currentRoomId, vote: val });
+            renderDeck();
+          };
+          deck.appendChild(b);
+        });
+      }
 
-                const isAdm = id === data.adminId;
-                const hasVoted = user.vote !== null;
+      socket.on("clear-local-votes", () => {
+        myVote = null;
+        renderDeck();
+      });
 
-                slot.innerHTML = `
-                    <div class="avatar ${isAdm ? 'is-adm' : ''}">
-                        ${isAdm ? '<span class="adm-crown">👑</span>' : ''}
-                        ${user.isSpectator ? '👁️' : '👤'}
+      socket.on("update-room", (data) => {
+        const container = document.getElementById("players-container");
+        container.innerHTML = "";
+        const usersEntries = Object.entries(data.users);
+
+        usersEntries.forEach(([id, user], index) => {
+          const angle = (index / usersEntries.length) * 2 * Math.PI;
+          const x = 350 + 290 * Math.cos(angle);
+          const y = 175 + 115 * Math.sin(angle);
+
+          const slot = document.createElement("div");
+          slot.className = "player-slot";
+          slot.style.left = x + "px";
+          slot.style.top = y + "px";
+
+          const isAdm = id === data.adminId;
+          const hasVoted = user.vote !== null;
+
+          slot.innerHTML = `
+                    <div class="avatar ${isAdm ? "is-adm" : ""}">
+                        ${isAdm ? '<span class="adm-crown">👑</span>' : ""}
+                        ${user.isSpectator ? "👁️" : "👤"}
                     </div>
                     <div style="font-size:11px; margin-top:3px; text-shadow: 1px 1px 2px black;">${user.name}</div>
-                    ${!user.isSpectator ? `
-                        <div class="card-slot ${data.revealed ? '' : (hasVoted ? 'card-hidden' : '')}">
-                            ${data.revealed ? (user.vote || '-') : ''}
+                    ${
+                      !user.isSpectator
+                        ? `
+                        <div class="card-slot ${data.revealed ? "" : hasVoted ? "card-hidden" : ""}">
+                            ${data.revealed ? user.vote || "-" : ""}
                         </div>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                 `;
-                container.appendChild(slot);
-            });
-
-            document.getElementById('admin-controls').style.display = (socket.id === data.adminId) ? 'flex' : 'none';
-
-            if (data.revealed) {
-                processStats(data);
-            } else {
-                if(chart) chart.destroy();
-                document.getElementById('average-text').innerText = '';
-                document.getElementById('agg-text').innerText = 'Concordância: 0%';
-            }
+          container.appendChild(slot);
         });
 
-        function processStats(data) {
-            const votes = [];
-            const counts = {};
-            Object.values(data.users).forEach(u => {
-                if(!u.isSpectator && u.vote) {
-                    votes.push(u.vote);
-                    counts[u.vote] = (counts[u.vote] || 0) + 1;
-                }
-            });
+        document.getElementById("admin-controls").style.display =
+          socket.id === data.adminId ? "flex" : "none";
 
-            if(votes.length === 0) return;
+        if (data.revealed) {
+          processStats(data);
+        } else {
+          if (chart) chart.destroy();
+          document.getElementById("average-text").innerText = "";
+          document.getElementById("agg-text").innerText = "Concordância: 0%";
+        }
+      });
 
-            const numericVotes = votes.filter(v => typeof v === 'number');
-            const avg = numericVotes.length ? (numericVotes.reduce((a,b)=>a+b,0)/numericVotes.length).toFixed(1) : '-';
-            document.getElementById('average-text').innerText = `Média: ${avg}`;
+      function processStats(data) {
+        const votes = [];
+        const counts = {};
+        Object.values(data.users).forEach((u) => {
+          if (!u.isSpectator && u.vote) {
+            votes.push(u.vote);
+            counts[u.vote] = (counts[u.vote] || 0) + 1;
+          }
+        });
 
-            const maxGroup = Math.max(...Object.values(counts));
-            const totalVoters = Object.values(data.users).filter(u => !u.isSpectator).length;
-            const agreement = totalVoters > 0 ? Math.round((maxGroup / totalVoters) * 100) : 0;
-            document.getElementById('agg-text').innerText = `Concordância: ${agreement}%`;
+        if (votes.length === 0) return;
 
-            if(agreement === 100 && totalVoters > 1) confetti({ particleCount: 150, spread: 60 });
+        const numericVotes = votes.filter((v) => typeof v === "number");
+        const avg = numericVotes.length
+          ? (
+              numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length
+            ).toFixed(1)
+          : "-";
+        document.getElementById("average-text").innerText = `Média: ${avg}`;
 
-            const ctx = document.getElementById('chartVotes').getContext('2d');
-            if(chart) chart.destroy();
-            chart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(counts),
-                    datasets: [{ 
-                        data: Object.values(counts), 
-                        backgroundColor: ['#42a5f5', '#ef5350', '#ffca28', '#66bb6a', '#ab47bc'],
-                        borderWidth: 0 
-                    }]
+        const maxGroup = Math.max(...Object.values(counts));
+        const totalVoters = Object.values(data.users).filter(
+          (u) => !u.isSpectator,
+        ).length;
+        const agreement =
+          totalVoters > 0 ? Math.round((maxGroup / totalVoters) * 100) : 0;
+        document.getElementById("agg-text").innerText =
+          `Concordância: ${agreement}%`;
+
+        if (agreement === 100 && totalVoters > 1)
+          confetti({ particleCount: 150, spread: 60 });
+
+        const ctx = document.getElementById("chartVotes").getContext("2d");
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: "doughnut",
+          data: {
+            labels: Object.keys(counts),
+            datasets: [
+              {
+                data: Object.values(counts),
+                backgroundColor: [
+                  "#42a5f5",
+                  "#ef5350",
+                  "#ffca28",
+                  "#66bb6a",
+                  "#ab47bc",
+                ],
+                borderWidth: 0,
+              },
+            ],
+          },
+          options: {
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (c) => ` Valor: ${c.label} - ${c.raw} Votos`,
                 },
-                options: { 
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => ` Valor: ${context.label} - ${context.raw} Votos`
-                            }
-                        }
-                    },
-                    cutout: '75%'
-                }
-            });
+              },
+            },
+            cutout: "75%",
+          },
+        });
 
-            if(data.revealedAt && data.revealedAt !== lastHistoryId) {
-                const tbody = document.getElementById('history-body');
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${avg}</td><td>${agreement}%</td>`;
-                tbody.prepend(row);
-                lastHistoryId = data.revealedAt;
-            }
+        if (data.revealedAt && data.revealedAt !== lastHistoryId) {
+          const tbody = document.getElementById("history-body");
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${avg}</td><td>${agreement}%</td>`;
+          tbody.prepend(row);
+          lastHistoryId = data.revealedAt;
         }
+      }
 
-        function reveal() { socket.emit('reveal-votes', currentRoom); }
-        function reset() { socket.emit('reset-game', currentRoom); }
-        function changeName() {
-            const n = prompt("Novo nome:");
-            if(n) socket.emit('change-name', { roomId: currentRoom, newName: n });
-        }
+      function reveal() {
+        socket.emit("reveal-votes", currentRoomId);
+      }
+      function reset() {
+        socket.emit("reset-game", currentRoomId);
+      }
+      function changeName() {
+        const n = prompt("Novo nome:");
+        if (n)
+          socket.emit("change-name", { roomId: currentRoomId, newName: n });
+      }
     </script>
-</body>
+  </body>
 </html>
