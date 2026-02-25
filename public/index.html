@@ -15,7 +15,7 @@
         --bg: #121212;
       }
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        font-family: "Segoe UI", sans-serif;
         background: var(--bg);
         color: white;
         margin: 0;
@@ -25,7 +25,6 @@
         overflow-x: hidden;
       }
 
-      /* Login */
       #login-screen {
         background: #1e1e1e;
         padding: 40px;
@@ -40,69 +39,68 @@
         border: none;
         margin-bottom: 10px;
         width: 250px;
-        font-size: 16px;
       }
 
-      /* Mesa */
+      /* Mesa Reduzida */
       .poker-area {
         position: relative;
-        width: 850px;
-        height: 450px;
-        margin: 40px auto;
+        width: 700px;
+        height: 350px;
+        margin: 20px auto;
       }
       .table-surface {
         position: absolute;
         width: 100%;
         height: 100%;
         background: var(--table);
-        border: 12px solid #3e2723;
-        border-radius: 220px;
-        box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.7);
+        border: 10px solid #3e2723;
+        border-radius: 180px;
+        box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7);
       }
 
+      /* Jogadores menores e mais contextuais */
       .player-slot {
         position: absolute;
         transform: translate(-50%, -50%);
         text-align: center;
-        width: 110px;
-        transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        width: 90px;
+        transition: all 0.5s;
       }
       .avatar {
-        width: 55px;
-        height: 55px;
-        background: #333;
+        width: 45px;
+        height: 45px;
+        background: #2c3e50;
         border-radius: 50%;
         margin: 0 auto 5px;
-        border: 3px solid #777;
+        border: 2px solid #555;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 18px;
         position: relative;
       }
       .is-adm {
         border-color: var(--gold);
-        box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
       }
       .adm-crown {
         position: absolute;
-        top: -15px;
-        font-size: 18px;
+        top: -12px;
+        font-size: 14px;
       }
 
       .card-slot {
-        width: 45px;
-        height: 65px;
-        background: #eee;
-        border-radius: 6px;
-        margin: 8px auto;
+        width: 35px;
+        height: 50px;
+        background: #fff;
+        border-radius: 4px;
+        margin: 5px auto;
         color: #222;
         font-weight: bold;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: 0.6s;
-        border: 1px solid #aaa;
+        transition: 0.4s;
+        font-size: 14px;
       }
       .card-hidden {
         background: linear-gradient(
@@ -115,18 +113,13 @@
           #b71c1c 75%,
           #b71c1c 100%
         );
-        background-size: 10px 10px;
-      }
-      .revealed {
-        transform: rotateY(360deg);
-        background: white;
-        font-size: 20px;
+        background-size: 8px 8px;
       }
 
-      /* Controles */
+      /* Controles e Cartas menores */
       .controls {
         background: #1e1e1e;
-        padding: 15px;
+        padding: 10px;
         width: 100%;
         position: fixed;
         bottom: 0;
@@ -135,115 +128,76 @@
         align-items: center;
         gap: 8px;
         border-top: 1px solid #333;
-        z-index: 100;
       }
       .fib-card {
-        width: 48px;
-        height: 72px;
+        width: 40px;
+        height: 60px;
         background: white;
         color: #333;
-        border-radius: 6px;
+        border-radius: 4px;
         border: none;
         cursor: pointer;
-        font-size: 18px;
+        font-size: 16px;
         font-weight: bold;
         transition: 0.2s;
-        box-shadow: 0 4px 0 #999;
-      }
-      .fib-card:hover {
-        transform: translateY(-8px);
-        background: var(--gold);
-        box-shadow: 0 4px 0 #b8960d;
       }
       .fib-card.active {
         background: #2196f3;
         color: white;
-        box-shadow: 0 4px 0 #0d47a1;
+        transform: translateY(-5px);
       }
 
-      .btn-action {
-        padding: 12px 20px;
-        border-radius: 6px;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
-        margin: 0 5px;
-      }
-      .btn-reveal {
-        background: #4caf50;
-        color: white;
-      }
-      .btn-reset {
-        background: #f44336;
-        color: white;
-      }
-
-      /* Stats e Histórico */
       .side-panel {
         position: fixed;
-        right: 20px;
-        top: 20px;
-        width: 220px;
+        right: 10px;
+        top: 10px;
+        width: 180px;
         background: rgba(30, 30, 30, 0.9);
-        padding: 15px;
-        border-radius: 12px;
-        border: 1px solid #333;
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 13px;
+        z-index: 10;
       }
       .history-section {
-        width: 850px;
-        margin: 20px auto 120px;
+        width: 700px;
+        margin: 10px auto 100px;
         background: #1e1e1e;
-        padding: 20px;
-        border-radius: 12px;
+        padding: 15px;
+        border-radius: 10px;
       }
       table {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
+        font-size: 13px;
       }
-      th,
-      td {
-        padding: 12px;
-        border-bottom: 1px solid #333;
-        text-align: center;
-      }
-      th {
-        color: var(--gold);
-        text-transform: uppercase;
-        font-size: 12px;
-      }
-      .tag-vote {
-        background: #333;
-        padding: 3px 8px;
-        border-radius: 4px;
-        margin: 2px;
-        font-size: 12px;
-        border: 1px solid #444;
+      .btn-action {
+        padding: 8px 15px;
+        border-radius: 5px;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
     <div id="login-screen">
       <h2>🃏 Poker Sprint</h2>
-      <input type="text" id="username" placeholder="Seu apelido..." /><br />
-      <label style="display: block; margin: 10px 0">
-        <input type="checkbox" id="isSpectator" /> Entrar como Observador
-      </label>
-      <button class="btn-action btn-reveal" onclick="join()">
-        Entrar na Sala
+      <input type="text" id="username" placeholder="Nome..." /><br />
+      <label><input type="checkbox" id="isSpectator" /> Espectador</label
+      ><br /><br />
+      <button
+        class="btn-action"
+        style="background: var(--table); color: white"
+        onclick="join()"
+      >
+        Entrar
       </button>
     </div>
 
     <div id="game-screen" style="display: none">
       <div class="side-panel">
-        <h3 id="agg-text" style="margin: 0 0 10px 0; font-size: 16px">
-          Concordância: 0%
-        </h3>
-        <canvas id="chartVotes" width="200" height="200"></canvas>
-        <div
-          id="average-text"
-          style="margin-top: 10px; font-weight: bold; color: var(--gold)"
-        ></div>
+        <h4 id="agg-text" style="margin: 5px 0">Concordância: 0%</h4>
+        <canvas id="chartVotes"></canvas>
+        <div id="average-text" style="margin-top: 5px"></div>
       </div>
 
       <div class="poker-area">
@@ -252,31 +206,36 @@
       </div>
 
       <div class="history-section">
-        <h3 style="margin: 0">📜 Histórico da Sessão</h3>
+        <h4 style="margin: 0">📜 Histórico</h4>
         <table>
-          <thead>
-            <tr>
-              <th>Hora</th>
-              <th>Média</th>
-              <th>Concordância</th>
-              <th>Distribuição</th>
-            </tr>
-          </thead>
           <tbody id="history-body"></tbody>
         </table>
       </div>
 
       <div class="controls">
-        <div id="cards-deck" style="display: flex; gap: 8px"></div>
+        <div id="cards-deck" style="display: flex; gap: 5px"></div>
         <div
-          style="width: 2px; height: 50px; background: #333; margin: 0 15px"
-        ></div>
-        <div id="admin-controls" style="display: none">
-          <button class="btn-action btn-reveal" onclick="reveal()">
-            REVELAR 👁️
+          id="admin-controls"
+          style="
+            display: none;
+            margin-left: 15px;
+            border-left: 1px solid #444;
+            padding-left: 15px;
+          "
+        >
+          <button
+            class="btn-action"
+            style="background: #4caf50; color: white"
+            onclick="reveal()"
+          >
+            REVELAR
           </button>
-          <button class="btn-action btn-reset" onclick="reset()">
-            LIMPAR 🧹
+          <button
+            class="btn-action"
+            style="background: #f44336; color: white"
+            onclick="reset()"
+          >
+            LIMPAR
           </button>
         </div>
         <button
@@ -292,7 +251,7 @@
     <script>
       const socket = io();
       const fibCards = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
-      let currentRoom = window.location.hash || "#scrum-master";
+      let currentRoom = window.location.hash || "#geral";
       let myVote = null;
       let chart = null;
       let lastHistoryId = null;
@@ -300,8 +259,7 @@
       function join() {
         const name = document.getElementById("username").value;
         const spec = document.getElementById("isSpectator").checked;
-        if (!name) return alert("Qual o seu nome?");
-
+        if (!name) return alert("Nome?");
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("game-screen").style.display = "block";
         socket.emit("join-room", {
@@ -328,15 +286,21 @@
         });
       }
 
+      // Limpa o voto azul localmente quando o Adm limpa a mesa
+      socket.on("clear-local-votes", () => {
+        myVote = null;
+        renderDeck();
+      });
+
       socket.on("update-room", (data) => {
         const container = document.getElementById("players-container");
         container.innerHTML = "";
-        const usersEntries = Object.entries(data.users);
+        const users = Object.entries(data.users);
 
-        usersEntries.forEach(([id, user], index) => {
-          const angle = (index / usersEntries.length) * 2 * Math.PI;
-          const x = 425 + 340 * Math.cos(angle);
-          const y = 225 + 160 * Math.sin(angle);
+        users.forEach(([id, user], index) => {
+          const angle = (index / users.length) * 2 * Math.PI;
+          const x = 350 + 280 * Math.cos(angle); // Raio menor para mesa menor
+          const y = 175 + 130 * Math.sin(angle);
 
           const slot = document.createElement("div");
           slot.className = "player-slot";
@@ -345,22 +309,21 @@
 
           const isAdm = id === data.adminId;
           const hasVoted = user.vote !== null;
-          const voteVal = data.revealed ? user.vote : hasVoted ? "" : "";
 
           slot.innerHTML = `
                     <div class="avatar ${isAdm ? "is-adm" : ""}">
                         ${isAdm ? '<span class="adm-crown">👑</span>' : ""}
-                        ${user.isSpectator ? "👁️" : "👤"}
+                        👤
                     </div>
-                    <div style="font-size:12px; font-weight:bold;">${user.name}</div>
+                    <div style="font-size:10px">${user.name}</div>
                     ${
                       !user.isSpectator
                         ? `
-                        <div class="card-slot ${data.revealed ? "revealed" : hasVoted ? "card-hidden" : ""}">
+                        <div class="card-slot ${data.revealed ? "" : hasVoted ? "card-hidden" : ""}">
                             ${data.revealed ? user.vote || "-" : ""}
                         </div>
                     `
-                        : '<div style="font-size:10px; color:#aaa; margin-top:10px;">ESPECTADOR</div>'
+                        : ""
                     }
                 `;
           container.appendChild(slot);
@@ -381,17 +344,14 @@
       function processStats(data) {
         const votes = [];
         const counts = {};
-
         Object.values(data.users).forEach((u) => {
           if (!u.isSpectator && u.vote) {
             votes.push(u.vote);
             counts[u.vote] = (counts[u.vote] || 0) + 1;
           }
         });
-
         if (votes.length === 0) return;
 
-        // Média
         const numericVotes = votes.filter((v) => typeof v === "number");
         const avg = numericVotes.length
           ? (
@@ -400,7 +360,6 @@
           : "-";
         document.getElementById("average-text").innerText = `Média: ${avg}`;
 
-        // Concordância
         const maxGroup = Math.max(...Object.values(counts));
         const totalVoters = Object.values(data.users).filter(
           (u) => !u.isSpectator,
@@ -409,11 +368,9 @@
         document.getElementById("agg-text").innerText =
           `Concordância: ${agreement}%`;
 
-        if (agreement === 100 && totalVoters > 1) {
-          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        }
+        if (agreement === 100 && totalVoters > 1)
+          confetti({ particleCount: 100 });
 
-        // Gráfico
         const ctx = document.getElementById("chartVotes").getContext("2d");
         if (chart) chart.destroy();
         chart = new Chart(ctx, {
@@ -423,43 +380,27 @@
             datasets: [
               {
                 data: Object.values(counts),
-                backgroundColor: [
-                  "#FF6384",
-                  "#36A2EB",
-                  "#FFCE56",
-                  "#4BC0C0",
-                  "#9966FF",
-                ],
+                backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0"],
               },
             ],
           },
-          options: { plugins: { legend: { display: false } }, cutout: "70%" },
+          options: { plugins: { legend: { display: false } } },
         });
 
-        // Histórico (evitar duplicar)
         if (data.revealedAt && data.revealedAt !== lastHistoryId) {
-          updateHistory(avg, agreement, counts);
+          const tbody = document.getElementById("history-body");
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${avg}</td><td>${agreement}%</td>`;
+          tbody.prepend(row);
           lastHistoryId = data.revealedAt;
         }
-      }
-
-      function updateHistory(avg, agg, counts) {
-        const tbody = document.getElementById("history-body");
-        const row = document.createElement("tr");
-        const dist = Object.entries(counts)
-          .map(([v, c]) => `<span class="tag-vote">${v} (x${c})</span>`)
-          .join("");
-        row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${avg}</td><td>${agg}%</td><td>${dist}</td>`;
-        tbody.prepend(row);
       }
 
       function reveal() {
         socket.emit("reveal-votes", currentRoom);
       }
       function reset() {
-        myVote = null;
         socket.emit("reset-game", currentRoom);
-        renderDeck();
       }
       function changeName() {
         const n = prompt("Novo nome:");

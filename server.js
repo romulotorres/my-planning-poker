@@ -22,7 +22,6 @@ io.on("connection", (socket) => {
         revealedAt: null,
       };
     }
-
     rooms[roomId].users[socket.id] = {
       name: userName,
       vote: null,
@@ -48,7 +47,7 @@ io.on("connection", (socket) => {
   socket.on("reveal-votes", (roomId) => {
     if (rooms[roomId] && rooms[roomId].adminId === socket.id) {
       rooms[roomId].revealed = true;
-      rooms[roomId].revealedAt = Date.now(); // Timestamp para controle do histórico
+      rooms[roomId].revealedAt = Date.now();
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
   });
@@ -60,6 +59,7 @@ io.on("connection", (socket) => {
       Object.keys(rooms[roomId].users).forEach(
         (id) => (rooms[roomId].users[id].vote = null),
       );
+      io.to(roomId).emit("clear-local-votes"); // Comando para limpar o azul das cartas
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
   });
@@ -69,7 +69,6 @@ io.on("connection", (socket) => {
       if (rooms[roomId].users[socket.id]) {
         const wasAdmin = rooms[roomId].adminId === socket.id;
         delete rooms[roomId].users[socket.id];
-
         if (Object.keys(rooms[roomId].users).length === 0) {
           delete rooms[roomId];
         } else {
