@@ -162,18 +162,28 @@
         box-shadow: 0 3px 0 #0d47a1;
       }
 
+      /* Gráfico Reduzido e Posicionado */
       .side-panel {
         position: fixed;
-        right: 20px;
-        top: 20px;
-        width: 200px;
+        right: 15px;
+        top: 15px;
+        width: 160px;
         background: rgba(30, 30, 30, 0.95);
-        padding: 15px;
+        padding: 12px;
         border-radius: 12px;
         border: 1px solid #444;
         text-align: center;
         z-index: 10;
       }
+      #agg-text {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: var(--gold);
+        display: block;
+        width: 100%;
+        text-align: center;
+      }
+
       #room-info {
         position: fixed;
         left: 20px;
@@ -187,13 +197,20 @@
         gap: 10px;
       }
 
+      /* Histórico com suas alterações */
       .history-section {
         width: 700px;
-        margin: 60px auto 140px;
+        margin: 80px auto 140px;
         background: var(--card-bg);
         padding: 25px;
         border-radius: 12px;
         border: 1px solid #333;
+      }
+      .history-title {
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
       table {
         width: 100%;
@@ -203,11 +220,15 @@
         padding: 12px;
         border-bottom: 1px solid #333;
         text-align: center;
+        font-size: 14px;
       }
+
       tr:first-child td {
         background: rgba(33, 150, 243, 0.1);
-        border-left: 4px solid #2196f3;
         font-weight: bold;
+      }
+      tr:first-child td:first-child {
+        border-left: 4px solid #2196f3;
       }
 
       .btn-action {
@@ -263,14 +284,8 @@
       </div>
 
       <div class="side-panel">
-        <span id="agg-text" style="color: var(--gold); font-size: 16px"
-          >Concordância: 0%</span
-        >
+        <span id="agg-text">Concordância: 0%</span>
         <canvas id="chartVotes"></canvas>
-        <div
-          id="average-text"
-          style="margin-top: 10px; font-weight: bold; font-size: 18px"
-        ></div>
       </div>
 
       <div class="poker-area">
@@ -279,7 +294,7 @@
       </div>
 
       <div class="history-section">
-        <h3 style="margin: 0">📜 Histórico</h3>
+        <h3 class="history-title">📜 Histórico</h3>
         <table>
           <tbody id="history-body"></tbody>
         </table>
@@ -329,8 +344,33 @@
       let chart = null;
       let lastHistoryId = null;
       let isSpectatorMode = false;
+      let currentAverage = "-";
 
-      // Auto-preenche a sala se estiver no hash da URL
+      // Plugin customizado para desenhar a média no centro do Donut
+      const centerTextPlugin = {
+        id: "centerText",
+        afterDraw: (chart) => {
+          const {
+            ctx,
+            chartArea: { top, bottom, left, right, width, height },
+          } = chart;
+          ctx.save();
+
+          // Desenhar o número (Média)
+          ctx.font = "bold 24px Segoe UI";
+          ctx.fillStyle = "#f1c40f";
+          ctx.textAlign = "center";
+          ctx.fillText(currentAverage, left + width / 2, top + height / 2 + 5);
+
+          // Desenhar a palavra "Média"
+          ctx.font = "12px Segoe UI";
+          ctx.fillStyle = "#aaa";
+          ctx.fillText("Média", left + width / 2, top + height / 2 + 22);
+
+          ctx.restore();
+        },
+      };
+
       if (window.location.hash) {
         document.getElementById("roomName").value = decodeURIComponent(
           window.location.hash.substring(1),
@@ -344,20 +384,15 @@
           .value.trim()
           .replace(/\s+/g, "-");
         isSpectatorMode = document.getElementById("isSpectator").checked;
-
         if (!name || !room) return alert("Preencha nome e sala.");
-
         currentRoomId = room;
         window.location.hash = room;
-
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("game-screen").style.display = "block";
         document.getElementById("display-room-name").innerText =
           `SALA: ${room.toUpperCase()}`;
-
         if (isSpectatorMode)
           document.getElementById("cards-deck").style.display = "none";
-
         socket.emit("join-room", {
           roomId: currentRoomId,
           userName: name,
@@ -406,15 +441,12 @@
           const angle = (index / usersEntries.length) * 2 * Math.PI;
           const x = 350 + 290 * Math.cos(angle);
           const y = 175 + 115 * Math.sin(angle);
-
           const slot = document.createElement("div");
           slot.className = "player-slot";
           slot.style.left = x + "px";
           slot.style.top = y + "px";
-
           const isAdm = id === data.adminId;
           const hasVoted = user.vote !== null;
-
           slot.innerHTML = `
                     <div class="avatar ${isAdm ? "is-adm" : ""}">
                         ${isAdm ? '<span class="adm-crown">👑</span>' : ""}
@@ -440,8 +472,8 @@
         if (data.revealed) {
           processStats(data);
         } else {
+          currentAverage = "-";
           if (chart) chart.destroy();
-          document.getElementById("average-text").innerText = "";
           document.getElementById("agg-text").innerText = "Concordância: 0%";
         }
       });
@@ -459,12 +491,11 @@
         if (votes.length === 0) return;
 
         const numericVotes = votes.filter((v) => typeof v === "number");
-        const avg = numericVotes.length
+        currentAverage = numericVotes.length
           ? (
               numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length
             ).toFixed(1)
           : "-";
-        document.getElementById("average-text").innerText = `Média: ${avg}`;
 
         const maxGroup = Math.max(...Object.values(counts));
         const totalVoters = Object.values(data.users).filter(
@@ -509,12 +540,13 @@
             },
             cutout: "75%",
           },
+          plugins: [centerTextPlugin],
         });
 
         if (data.revealedAt && data.revealedAt !== lastHistoryId) {
           const tbody = document.getElementById("history-body");
           const row = document.createElement("tr");
-          row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${avg}</td><td>${agreement}%</td>`;
+          row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${currentAverage}</td><td>${agreement}%</td>`;
           tbody.prepend(row);
           lastHistoryId = data.revealedAt;
         }
