@@ -41,6 +41,20 @@
         display: none;
       }
 
+      #room-info {
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        background: rgba(30, 30, 30, 0.95);
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid #444;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 10;
+      }
+
       .poker-area {
         position: relative;
         width: 700px;
@@ -62,7 +76,6 @@
         transform: translate(-50%, -50%);
         text-align: center;
         width: 120px;
-        transition: all 0.5s;
         z-index: 5;
       }
       .player-name {
@@ -126,18 +139,41 @@
         background-size: 8px 8px;
       }
 
-      #room-info {
+      .side-panel {
         position: fixed;
-        left: 20px;
-        top: 20px;
+        right: 15px;
+        top: 15px;
+        width: 160px;
         background: rgba(30, 30, 30, 0.95);
-        padding: 10px 15px;
-        border-radius: 10px;
+        padding: 12px;
+        border-radius: 12px;
         border: 1px solid #444;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        text-align: center;
         z-index: 10;
+      }
+
+      .history-section {
+        width: 700px;
+        margin: 40px auto 140px;
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #333;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td {
+        padding: 10px;
+        border-bottom: 1px solid #333;
+        text-align: center;
+        font-size: 14px;
+      }
+      tr:first-child td {
+        color: var(--gold);
+        font-weight: bold;
+        background: rgba(241, 196, 15, 0.05);
       }
 
       .controls {
@@ -163,26 +199,18 @@
         cursor: pointer;
         font-size: 18px;
         font-weight: bold;
-        transition: 0.3s;
       }
       .fib-card.active {
         background: #2196f3;
         color: white;
         transform: translateY(-8px);
       }
-
       .btn-action {
         padding: 10px 20px;
         border-radius: 6px;
         border: none;
         font-weight: bold;
         cursor: pointer;
-      }
-      .btn-copy {
-        background: #555;
-        color: white;
-        font-size: 11px;
-        padding: 5px 8px;
       }
     </style>
   </head>
@@ -217,16 +245,9 @@
         style="padding: 12px; width: 250px; margin-bottom: 15px"
       />
       <br />
-      <label
-        style="
-          cursor: pointer;
-          font-size: 14px;
-          display: block;
-          margin-bottom: 20px;
-        "
+      <label style="cursor: pointer; display: block; margin-bottom: 20px"
+        ><input type="checkbox" id="isSpectator" /> Apenas observar 👁️</label
       >
-        <input type="checkbox" id="isSpectator" /> Apenas observar 👁️
-      </label>
       <button
         class="btn-action"
         style="background: var(--table); color: white"
@@ -243,30 +264,40 @@
           style="font-weight: bold; color: var(--gold)"
           >SALA: -</span
         >
-        <button class="btn-copy" id="btn-copy" onclick="copyLink()">
+        <button
+          class="btn-action"
+          style="
+            background: #555;
+            color: white;
+            font-size: 11px;
+            padding: 5px 8px;
+          "
+          id="btn-copy"
+          onclick="copyLink()"
+        >
           Copiar Link 🔗
         </button>
       </div>
 
-      <div
-        style="
-          position: fixed;
-          right: 15px;
-          top: 15px;
-          width: 160px;
-          background: rgba(30, 30, 30, 0.95);
-          padding: 12px;
-          border-radius: 12px;
-          border: 1px solid #444;
-          text-align: center;
-        "
-      >
+      <div class="side-panel">
+        <span
+          id="agg-text"
+          style="color: var(--gold); font-size: 13px; font-weight: bold"
+          >Concordância: 0%</span
+        >
         <canvas id="chartVotes"></canvas>
       </div>
 
       <div class="poker-area">
         <div class="table-surface"></div>
         <div id="players-container"></div>
+      </div>
+
+      <div class="history-section">
+        <h3 style="margin-top: 0">📜 Histórico da Sessão</h3>
+        <table>
+          <tbody id="history-body"></tbody>
+        </table>
       </div>
 
       <div class="controls">
@@ -431,19 +462,17 @@
         });
         document.getElementById("admin-controls").style.display =
           socket.id === data.adminId ? "block" : "none";
-        if (data.revealed) {
-          processStats(data);
-          confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            zIndex: 1000,
-          });
-        }
+        if (data.revealed) processStats(data);
       });
 
       socket.on("clear-local-votes", () => {
         myVote = null;
+        currentAverage = "-";
+        document.getElementById("agg-text").innerText = "Concordância: 0%";
+        if (chart) {
+          chart.destroy();
+          chart = null;
+        }
         renderDeck();
       });
 
@@ -451,16 +480,35 @@
         const votes = Object.values(data.users)
           .filter((u) => !u.isSpectator && u.vote !== null)
           .map((u) => u.vote);
-        if (!votes.length) {
-          currentAverage = "-";
-          return;
-        }
+        if (!votes.length) return;
+
         const nums = votes.filter((v) => typeof v === "number");
         currentAverage = nums.length
           ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)
           : "-";
+
         const counts = {};
         votes.forEach((v) => (counts[v] = (counts[v] || 0) + 1));
+        const distinctVotes = Object.keys(counts).length;
+        const agreement = Math.round((1 / distinctVotes) * 100);
+        document.getElementById("agg-text").innerText =
+          `Concordância: ${agreement}%`;
+
+        if (agreement === 100 && votes.length > 1) {
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            zIndex: 1000,
+          });
+        }
+
+        // Atualiza Tabela Histórico
+        const tbody = document.getElementById("history-body");
+        const row = tbody.insertRow(0);
+        row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${currentAverage}</td><td>Votos: ${votes.join(", ")}</td>`;
+
+        // Desenha Gráfico
         if (chart) chart.destroy();
         chart = new Chart(document.getElementById("chartVotes"), {
           type: "doughnut",
