@@ -522,7 +522,21 @@
               },
             ],
           },
-          options: { plugins: { legend: { display: false } }, cutout: "75%" },
+          options: {
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const label = context.label || ""; // O valor da pontuação (ex: 5)
+                    const value = context.raw || 0; // A quantidade de votos (ex: 2)
+                    return `Pontuação ${label} - ${value} votos`;
+                  },
+                },
+              },
+            },
+            cutout: "75%",
+          },
           plugins: [centerTextPlugin],
         });
       }
