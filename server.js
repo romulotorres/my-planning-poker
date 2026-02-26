@@ -10,11 +10,10 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, "public")));
 
 // CONFIGURAÇÃO DE ADMIN
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "314159265"; // Defina uma senha forte para o painel de controle
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "314159265";
 const VALID_VOTES = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
 const rooms = {};
 
-// Rota do Painel de Controle
 app.get("/admin-dashboard", (req, res) => {
   const { pw } = req.query;
   if (pw === ADMIN_PASSWORD) {
@@ -25,7 +24,6 @@ app.get("/admin-dashboard", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  // Autenticação de Admin no Socket
   socket.on("request-admin-stats", (pw) => {
     if (pw === ADMIN_PASSWORD) {
       socket.join("admin-room");
@@ -44,7 +42,6 @@ io.on("connection", (socket) => {
         revealedAt: null,
       };
     }
-    // Limite de 50 caracteres para os nomes engraçados
     rooms[roomId].users[socket.id] = {
       name: userName.substring(0, 50),
       vote: null,
@@ -52,6 +49,13 @@ io.on("connection", (socket) => {
     };
     io.to(roomId).emit("update-room", rooms[roomId]);
     sendAdminUpdate();
+  });
+
+  socket.on("change-name", ({ roomId, newName }) => {
+    if (rooms[roomId] && rooms[roomId].users[socket.id] && newName) {
+      rooms[roomId].users[socket.id].name = newName.substring(0, 50);
+      io.to(roomId).emit("update-room", rooms[roomId]);
+    }
   });
 
   socket.on("cast-vote", ({ roomId, vote }) => {
@@ -118,4 +122,4 @@ function sendAdminUpdate() {
 }
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+server.listen(PORT, () => console.log(`Rodando em http://localhost:${PORT}`));

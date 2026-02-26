@@ -78,12 +78,11 @@
       .player-name {
         font-size: 11px;
         margin-top: 3px;
-        max-width: 110px;
+        max-width: 100px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        margin-left: auto;
-        margin-right: auto;
+        margin: 3px auto;
       }
 
       .avatar {
@@ -169,57 +168,26 @@
         transform: translateY(-8px);
       }
 
-      .side-panel {
-        position: fixed;
-        right: 15px;
-        top: 15px;
-        width: 160px;
-        background: rgba(30, 30, 30, 0.95);
-        padding: 12px;
-        border-radius: 12px;
-        border: 1px solid #444;
-        text-align: center;
-        z-index: 10;
-      }
-
-      .history-section {
-        width: 700px;
-        margin: 80px auto 140px;
-        background: var(--card-bg);
-        padding: 25px;
-        border-radius: 12px;
-        border: 1px solid #333;
-      }
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      td {
-        padding: 12px;
-        border-bottom: 1px solid #333;
-        text-align: center;
-      }
-      tr:first-child td {
-        background: rgba(33, 150, 243, 0.1);
-        font-weight: bold;
-      }
-      tr:first-child td:first-child {
-        border-left: 4px solid #2196f3;
-      }
-
       .btn-action {
         padding: 10px 20px;
         border-radius: 6px;
         border: none;
         font-weight: bold;
         cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn-edit {
+        background: #444;
+        color: white;
+        margin-left: 10px;
+        font-size: 18px;
       }
     </style>
   </head>
   <body>
     <div id="conn-status">
       <span>⚠️ Conexão perdida.</span>
-      <button class="btn-reconnect" onclick="manualReconnect()">
+      <button class="btn-reconnect" onclick="socket.connect()">
         Reconectar
       </button>
     </div>
@@ -227,29 +195,39 @@
     <div
       id="login-screen"
       style="
+        margin-top: 60px;
+        text-align: center;
         background: var(--card-bg);
         padding: 40px;
         border-radius: 15px;
-        margin-top: 60px;
-        text-align: center;
       "
     >
       <h2>🃏 Poker Sprint Pro</h2>
       <input
         type="text"
         id="username"
-        placeholder="Seu apelido (Até 50 chars)..."
+        placeholder="Seu apelido..."
         maxlength="50"
-        style="padding: 12px; margin-bottom: 10px; width: 250px"
+        style="padding: 12px; width: 250px; margin-bottom: 10px"
       />
       <br />
       <input
         type="text"
         id="roomName"
         placeholder="Nome da sala..."
-        style="padding: 12px; margin-bottom: 20px; width: 250px"
+        style="padding: 12px; width: 250px; margin-bottom: 15px"
       />
       <br />
+      <label
+        style="
+          cursor: pointer;
+          font-size: 14px;
+          display: block;
+          margin-bottom: 20px;
+        "
+      >
+        <input type="checkbox" id="isSpectator" /> Apenas observar 👁️
+      </label>
       <button
         class="btn-action"
         style="background: var(--table); color: white"
@@ -260,7 +238,19 @@
     </div>
 
     <div id="game-screen" style="display: none; width: 100%">
-      <div class="side-panel">
+      <div
+        style="
+          position: fixed;
+          right: 15px;
+          top: 15px;
+          width: 160px;
+          background: rgba(30, 30, 30, 0.95);
+          padding: 12px;
+          border-radius: 12px;
+          border: 1px solid #444;
+          text-align: center;
+        "
+      >
         <span id="agg-text" style="color: var(--gold); font-size: 13px"
           >Concordância: 0%</span
         >
@@ -272,19 +262,20 @@
         <div id="players-container"></div>
       </div>
 
-      <div class="history-section">
-        <h3 style="margin-bottom: 15px">📜 Histórico</h3>
-        <table>
-          <tbody id="history-body"></tbody>
-        </table>
-      </div>
-
       <div class="controls">
         <div id="cards-deck" style="display: flex; gap: 8px"></div>
-        <div id="admin-controls" style="display: none">
+        <div
+          id="admin-controls"
+          style="
+            display: none;
+            border-left: 2px solid #444;
+            padding-left: 15px;
+            margin-left: 10px;
+          "
+        >
           <button
             class="btn-action"
-            style="background: #4caf50; color: white; margin: 0 10px"
+            style="background: #4caf50; color: white; margin-right: 8px"
             onclick="reveal()"
           >
             REVELAR
@@ -297,6 +288,13 @@
             LIMPAR
           </button>
         </div>
+        <button
+          class="btn-action btn-edit"
+          onclick="changeName()"
+          title="Mudar meu nome"
+        >
+          ✏️
+        </button>
       </div>
     </div>
 
@@ -306,7 +304,8 @@
       let currentRoomId = "",
         myVote = null,
         chart = null,
-        currentAverage = "-";
+        currentAverage = "-",
+        isSpectatorMode = false;
 
       socket.on("disconnect", () => {
         document.getElementById("conn-status").style.display = "block";
@@ -315,10 +314,6 @@
         document.getElementById("conn-status").style.display = "none";
         if (currentRoomId) join();
       });
-
-      function manualReconnect() {
-        socket.connect();
-      }
 
       const centerTextPlugin = {
         id: "centerText",
@@ -332,9 +327,6 @@
           ctx.fillStyle = "#f1c40f";
           ctx.textAlign = "center";
           ctx.fillText(currentAverage, left + width / 2, top + height / 2 + 5);
-          ctx.font = "10px Segoe UI";
-          ctx.fillStyle = "#aaa";
-          ctx.fillText("Média", left + width / 2, top + height / 2 + 20);
           ctx.restore();
         },
       };
@@ -342,15 +334,37 @@
       function join() {
         const name = document.getElementById("username").value;
         const room = document.getElementById("roomName").value.trim();
+        isSpectatorMode = document.getElementById("isSpectator").checked;
+
         if (!name || !room) return;
         currentRoomId = room;
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("game-screen").style.display = "block";
-        socket.emit("join-room", { roomId: room, userName: name });
+
+        if (isSpectatorMode)
+          document.getElementById("cards-deck").style.display = "none";
+
+        socket.emit("join-room", {
+          roomId: room,
+          userName: name,
+          isSpectator: isSpectatorMode,
+        });
         renderDeck();
       }
 
+      function changeName() {
+        const n = prompt(
+          "Novo apelido:",
+          document.getElementById("username").value,
+        );
+        if (n) {
+          document.getElementById("username").value = n;
+          socket.emit("change-name", { roomId: currentRoomId, newName: n });
+        }
+      }
+
       function renderDeck() {
+        if (isSpectatorMode) return;
         const deck = document.getElementById("cards-deck");
         deck.innerHTML = "";
         fibCards.forEach((val) => {
@@ -380,12 +394,19 @@
           slot.style.top = y + "px";
           slot.innerHTML = `
                     <div class="avatar ${id === data.adminId ? "is-adm" : ""}">
-                        ${id === data.adminId ? '<span class="adm-crown">👑</span>' : ""}👤
+                        ${id === data.adminId ? '<span class="adm-crown">👑</span>' : ""}
+                        ${user.isSpectator ? "👁️" : "👤"}
                     </div>
                     <div class="player-name" title="${user.name}">${user.name}</div>
-                    <div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">
-                        ${data.revealed ? user.vote || "-" : ""}
-                    </div>
+                    ${
+                      !user.isSpectator
+                        ? `
+                        <div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">
+                            ${data.revealed ? user.vote || "-" : ""}
+                        </div>
+                    `
+                        : ""
+                    }
                 `;
           container.appendChild(slot);
         });
@@ -394,11 +415,19 @@
         if (data.revealed) processStats(data);
       });
 
+      socket.on("clear-local-votes", () => {
+        myVote = null;
+        renderDeck();
+      });
+
       function processStats(data) {
         const votes = Object.values(data.users)
-          .map((u) => u.vote)
-          .filter((v) => v !== null);
-        if (!votes.length) return;
+          .filter((u) => !u.isSpectator && u.vote !== null)
+          .map((u) => u.vote);
+        if (!votes.length) {
+          currentAverage = "-";
+          return;
+        }
         const nums = votes.filter((v) => typeof v === "number");
         currentAverage = nums.length
           ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)
@@ -429,8 +458,6 @@
       }
       function reset() {
         socket.emit("reset-game", currentRoomId);
-        myVote = null;
-        renderDeck();
       }
     </script>
   </body>
