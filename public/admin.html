@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Admin - Poker Stats</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      body {
+        background: #121212;
+        color: white;
+        font-family: sans-serif;
+        padding: 30px;
+      }
+      .card {
+        background: #1e1e1e;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        border-left: 4px solid #f1c40f;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #333;
+        padding: 10px;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📊 Monitoramento Real-time</h1>
+    <div style="display: flex; gap: 20px">
+      <div class="card">Salas: <b id="rooms">0</b></div>
+      <div class="card">Usuários: <b id="users">0</b></div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Sala</th>
+          <th>Membros</th>
+        </tr>
+      </thead>
+      <tbody id="list"></tbody>
+    </table>
+    <script>
+      const socket = io();
+      const pw = new URLSearchParams(window.location.search).get("pw");
+      socket.emit("request-admin-stats", pw);
+      socket.on("admin-stats-update", (s) => {
+        document.getElementById("rooms").innerText = s.totalRooms;
+        document.getElementById("users").innerText = s.totalUsers;
+        document.getElementById("list").innerHTML = s.details
+          .map((d) => `<tr><td>${d.name}</td><td>${d.count}</td></tr>`)
+          .join("");
+      });
+    </script>
+  </body>
+</html>

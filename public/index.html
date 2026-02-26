@@ -27,7 +27,6 @@
         overflow-x: hidden;
       }
 
-      /* Banner de desconexão aprimorado */
       #conn-status {
         position: fixed;
         top: 0;
@@ -40,7 +39,6 @@
         font-weight: bold;
         z-index: 9999;
         display: none;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
       }
       .btn-reconnect {
         background: white;
@@ -50,39 +48,7 @@
         border-radius: 4px;
         margin-left: 15px;
         cursor: pointer;
-        font-size: 12px;
-        text-transform: uppercase;
         font-weight: bold;
-        transition: 0.3s;
-      }
-      .btn-reconnect:hover {
-        background: #fdfdfd;
-        transform: scale(1.05);
-      }
-      .btn-reconnect:disabled {
-        opacity: 0.6;
-        cursor: wait;
-      }
-
-      /* Estilos base mantidos */
-      #login-screen {
-        background: var(--card-bg);
-        padding: 40px;
-        border-radius: 15px;
-        margin-top: 60px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        text-align: center;
-        width: 320px;
-      }
-      input[type="text"] {
-        padding: 12px;
-        border-radius: 5px;
-        border: 1px solid #444;
-        background: #121212;
-        color: white;
-        margin-bottom: 15px;
-        width: 90%;
-        font-size: 16px;
       }
 
       .poker-area {
@@ -105,10 +71,21 @@
         position: absolute;
         transform: translate(-50%, -50%);
         text-align: center;
-        width: 90px;
+        width: 120px;
         transition: all 0.5s;
         z-index: 5;
       }
+      .player-name {
+        font-size: 11px;
+        margin-top: 3px;
+        max-width: 110px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
       .avatar {
         width: 45px;
         height: 45px;
@@ -144,7 +121,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: 0.4s;
         font-size: 16px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
       }
@@ -160,7 +136,6 @@
           #b71c1c 100%
         );
         background-size: 8px 8px;
-        border: 1px solid #7f1d1d;
       }
 
       .controls {
@@ -175,7 +150,6 @@
         gap: 12px;
         border-top: 2px solid #333;
         z-index: 100;
-        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
       }
       .fib-card {
         width: 42px;
@@ -188,21 +162,11 @@
         font-size: 18px;
         font-weight: bold;
         transition: 0.3s;
-        box-shadow: 0 3px 0 #bbb;
-      }
-      .fib-card:hover:not(:disabled) {
-        transform: translateY(-12px);
-        background: var(--gold);
       }
       .fib-card.active {
         background: #2196f3;
         color: white;
         transform: translateY(-8px);
-        box-shadow: 0 3px 0 #0d47a1;
-      }
-      .fib-card:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
       }
 
       .side-panel {
@@ -217,18 +181,6 @@
         text-align: center;
         z-index: 10;
       }
-      #room-info {
-        position: fixed;
-        left: 20px;
-        top: 20px;
-        background: rgba(30, 30, 30, 0.95);
-        padding: 10px 15px;
-        border-radius: 10px;
-        border: 1px solid #444;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
 
       .history-section {
         width: 700px;
@@ -237,12 +189,6 @@
         padding: 25px;
         border-radius: 12px;
         border: 1px solid #333;
-      }
-      .history-title {
-        margin: 0 0 20px 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
       }
       table {
         width: 100%;
@@ -267,50 +213,46 @@
         border: none;
         font-weight: bold;
         cursor: pointer;
-        transition: 0.2s;
-      }
-      .btn-action:disabled {
-        background: #444 !important;
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      .btn-copy {
-        background: #555;
-        color: white;
-        font-size: 12px;
-        padding: 5px 10px;
       }
     </style>
   </head>
   <body>
     <div id="conn-status">
-      <span>⚠️ Conexão perdida com o servidor.</span>
-      <button
-        id="reconnect-trigger"
-        class="btn-reconnect"
-        onclick="manualReconnect()"
-      >
-        Tentar Reconectar
+      <span>⚠️ Conexão perdida.</span>
+      <button class="btn-reconnect" onclick="manualReconnect()">
+        Reconectar
       </button>
     </div>
 
-    <div id="login-screen">
-      <h2 style="margin-top: 0">🃏 Poker Sprint Pro</h2>
-      <input type="text" id="username" placeholder="Seu apelido..." />
-      <input type="text" id="roomName" placeholder="Nome da sala..." />
-      <label
-        style="
-          cursor: pointer;
-          font-size: 14px;
-          display: block;
-          margin-bottom: 20px;
-        "
-      >
-        <input type="checkbox" id="isSpectator" /> Apenas observar
-      </label>
+    <div
+      id="login-screen"
+      style="
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 15px;
+        margin-top: 60px;
+        text-align: center;
+      "
+    >
+      <h2>🃏 Poker Sprint Pro</h2>
+      <input
+        type="text"
+        id="username"
+        placeholder="Seu apelido (Até 50 chars)..."
+        maxlength="50"
+        style="padding: 12px; margin-bottom: 10px; width: 250px"
+      />
+      <br />
+      <input
+        type="text"
+        id="roomName"
+        placeholder="Nome da sala..."
+        style="padding: 12px; margin-bottom: 20px; width: 250px"
+      />
+      <br />
       <button
         class="btn-action"
-        style="background: var(--table); color: white; width: 100%"
+        style="background: var(--table); color: white"
         onclick="join()"
       >
         ENTRAR NA MESA
@@ -318,19 +260,8 @@
     </div>
 
     <div id="game-screen" style="display: none; width: 100%">
-      <div id="room-info">
-        <span
-          id="display-room-name"
-          style="font-weight: bold; color: var(--gold)"
-          >SALA: -</span
-        >
-        <button class="btn-action btn-copy" id="btn-copy" onclick="copyLink()">
-          Copiar Link 🔗
-        </button>
-      </div>
-
       <div class="side-panel">
-        <span id="agg-text" style="color: var(--gold); font-size: 14px"
+        <span id="agg-text" style="color: var(--gold); font-size: 13px"
           >Concordância: 0%</span
         >
         <canvas id="chartVotes"></canvas>
@@ -342,7 +273,7 @@
       </div>
 
       <div class="history-section">
-        <h3 class="history-title">📜 Histórico</h3>
+        <h3 style="margin-bottom: 15px">📜 Histórico</h3>
         <table>
           <tbody id="history-body"></tbody>
         </table>
@@ -350,89 +281,43 @@
 
       <div class="controls">
         <div id="cards-deck" style="display: flex; gap: 8px"></div>
-        <div
-          id="admin-controls"
-          style="
-            display: none;
-            margin-left: 20px;
-            border-left: 2px solid #444;
-            padding-left: 20px;
-          "
-        >
+        <div id="admin-controls" style="display: none">
           <button
-            class="btn-action admin-btn"
-            style="background: #4caf50; color: white; margin-right: 8px"
+            class="btn-action"
+            style="background: #4caf50; color: white; margin: 0 10px"
             onclick="reveal()"
           >
             REVELAR
           </button>
           <button
-            class="btn-action admin-btn"
+            class="btn-action"
             style="background: #f44336; color: white"
             onclick="reset()"
           >
             LIMPAR
           </button>
         </div>
-        <button
-          class="btn-action"
-          style="background: #444; color: white; margin-left: 10px"
-          onclick="changeName()"
-        >
-          ✏️
-        </button>
       </div>
     </div>
 
     <script>
-      const socket = io({
-        reconnectionAttempts: 10,
-        timeout: 10000,
-      });
-
+      const socket = io();
       const fibCards = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
-      let currentRoomId = "";
-      let myVote = null;
-      let chart = null;
-      let lastHistoryId = null;
-      let isSpectatorMode = false;
-      let currentAverage = "-";
+      let currentRoomId = "",
+        myVote = null,
+        chart = null,
+        currentAverage = "-";
 
-      // LÓGICA DE STATUS DE CONEXÃO
       socket.on("disconnect", () => {
         document.getElementById("conn-status").style.display = "block";
-        toggleControls(true);
       });
-
       socket.on("connect", () => {
         document.getElementById("conn-status").style.display = "none";
-        document.getElementById("reconnect-trigger").innerText =
-          "Tentar Reconectar";
-        document.getElementById("reconnect-trigger").disabled = false;
-        toggleControls(false);
-
-        if (currentRoomId) {
-          const name = document.getElementById("username").value;
-          socket.emit("join-room", {
-            roomId: currentRoomId,
-            userName: name,
-            isSpectator: isSpectatorMode,
-          });
-        }
+        if (currentRoomId) join();
       });
 
       function manualReconnect() {
-        const btn = document.getElementById("reconnect-trigger");
-        btn.disabled = true;
-        btn.innerText = "Conectando...";
         socket.connect();
-      }
-
-      function toggleControls(disable) {
-        const buttons = document.querySelectorAll(
-          ".fib-card, .btn-action:not(.btn-reconnect)",
-        );
-        buttons.forEach((btn) => (btn.disabled = disable));
       }
 
       const centerTextPlugin = {
@@ -443,58 +328,29 @@
             chartArea: { top, left, width, height },
           } = chart;
           ctx.save();
-          ctx.font = "bold 24px Segoe UI";
+          ctx.font = "bold 22px Segoe UI";
           ctx.fillStyle = "#f1c40f";
           ctx.textAlign = "center";
           ctx.fillText(currentAverage, left + width / 2, top + height / 2 + 5);
-          ctx.font = "12px Segoe UI";
+          ctx.font = "10px Segoe UI";
           ctx.fillStyle = "#aaa";
-          ctx.fillText("Média", left + width / 2, top + height / 2 + 22);
+          ctx.fillText("Média", left + width / 2, top + height / 2 + 20);
           ctx.restore();
         },
       };
 
-      if (window.location.hash) {
-        document.getElementById("roomName").value = decodeURIComponent(
-          window.location.hash.substring(1),
-        );
-      }
-
       function join() {
         const name = document.getElementById("username").value;
-        const room = document
-          .getElementById("roomName")
-          .value.trim()
-          .replace(/\s+/g, "-");
-        isSpectatorMode = document.getElementById("isSpectator").checked;
-        if (!name || !room) return alert("Preencha nome e sala.");
+        const room = document.getElementById("roomName").value.trim();
+        if (!name || !room) return;
         currentRoomId = room;
-        window.location.hash = room;
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("game-screen").style.display = "block";
-        document.getElementById("display-room-name").innerText =
-          `SALA: ${room.toUpperCase()}`;
-        if (isSpectatorMode)
-          document.getElementById("cards-deck").style.display = "none";
-        socket.emit("join-room", {
-          roomId: currentRoomId,
-          userName: name,
-          isSpectator: isSpectatorMode,
-        });
+        socket.emit("join-room", { roomId: room, userName: name });
         renderDeck();
       }
 
-      function copyLink() {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url).then(() => {
-          const btn = document.getElementById("btn-copy");
-          btn.innerText = "Copiado! ✅";
-          setTimeout(() => (btn.innerText = "Copiar Link 🔗"), 2000);
-        });
-      }
-
       function renderDeck() {
-        if (isSpectatorMode) return;
         const deck = document.getElementById("cards-deck");
         deck.innerHTML = "";
         fibCards.forEach((val) => {
@@ -510,122 +366,62 @@
         });
       }
 
-      socket.on("clear-local-votes", () => {
-        myVote = null;
-        renderDeck();
-      });
-
       socket.on("update-room", (data) => {
         const container = document.getElementById("players-container");
         container.innerHTML = "";
-        const usersEntries = Object.entries(data.users);
-
-        usersEntries.forEach(([id, user], index) => {
-          const angle = (index / usersEntries.length) * 2 * Math.PI;
+        const users = Object.entries(data.users);
+        users.forEach(([id, user], i) => {
+          const angle = (i / users.length) * 2 * Math.PI;
           const x = 350 + 290 * Math.cos(angle);
           const y = 175 + 115 * Math.sin(angle);
           const slot = document.createElement("div");
           slot.className = "player-slot";
           slot.style.left = x + "px";
           slot.style.top = y + "px";
-          const isAdm = id === data.adminId;
-          const hasVoted = user.vote !== null;
           slot.innerHTML = `
-                    <div class="avatar ${isAdm ? "is-adm" : ""}">
-                        ${isAdm ? '<span class="adm-crown">👑</span>' : ""}
-                        ${user.isSpectator ? "👁️" : "👤"}
+                    <div class="avatar ${id === data.adminId ? "is-adm" : ""}">
+                        ${id === data.adminId ? '<span class="adm-crown">👑</span>' : ""}👤
                     </div>
-                    <div style="font-size:11px; margin-top:3px;">${user.name}</div>
-                    ${
-                      !user.isSpectator
-                        ? `
-                        <div class="card-slot ${data.revealed ? "" : hasVoted ? "card-hidden" : ""}">
-                            ${data.revealed ? user.vote || "-" : ""}
-                        </div>
-                    `
-                        : ""
-                    }
+                    <div class="player-name" title="${user.name}">${user.name}</div>
+                    <div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">
+                        ${data.revealed ? user.vote || "-" : ""}
+                    </div>
                 `;
           container.appendChild(slot);
         });
-
         document.getElementById("admin-controls").style.display =
-          socket.id === data.adminId ? "flex" : "none";
-
-        if (data.revealed) {
-          processStats(data);
-        } else {
-          currentAverage = "-";
-          if (chart) chart.destroy();
-          document.getElementById("agg-text").innerText = "Concordância: 0%";
-        }
+          socket.id === data.adminId ? "block" : "none";
+        if (data.revealed) processStats(data);
       });
 
       function processStats(data) {
-        const votes = [];
-        const counts = {};
-        Object.values(data.users).forEach((u) => {
-          if (!u.isSpectator && u.vote) {
-            votes.push(u.vote);
-            counts[u.vote] = (counts[u.vote] || 0) + 1;
-          }
-        });
-
-        if (votes.length === 0) return;
-
-        const numericVotes = votes.filter((v) => typeof v === "number");
-        currentAverage = numericVotes.length
-          ? (
-              numericVotes.reduce((a, b) => a + b, 0) / numericVotes.length
-            ).toFixed(1)
+        const votes = Object.values(data.users)
+          .map((u) => u.vote)
+          .filter((v) => v !== null);
+        if (!votes.length) return;
+        const nums = votes.filter((v) => typeof v === "number");
+        currentAverage = nums.length
+          ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)
           : "-";
 
-        const maxGroup = Math.max(...Object.values(counts));
-        const totalVoters = Object.values(data.users).filter(
-          (u) => !u.isSpectator,
-        ).length;
-        const agreement =
-          totalVoters > 0 ? Math.round((maxGroup / totalVoters) * 100) : 0;
-        document.getElementById("agg-text").innerText =
-          `Concordância: ${agreement}%`;
-
-        if (agreement === 100 && totalVoters > 1)
-          confetti({ particleCount: 150, spread: 60 });
-
-        const ctx = document.getElementById("chartVotes").getContext("2d");
+        const counts = {};
+        votes.forEach((v) => (counts[v] = (counts[v] || 0) + 1));
         if (chart) chart.destroy();
-        chart = new Chart(ctx, {
+        chart = new Chart(document.getElementById("chartVotes"), {
           type: "doughnut",
           data: {
             labels: Object.keys(counts),
             datasets: [
               {
                 data: Object.values(counts),
-                backgroundColor: [
-                  "#42a5f5",
-                  "#ef5350",
-                  "#ffca28",
-                  "#66bb6a",
-                  "#ab47bc",
-                ],
+                backgroundColor: ["#42a5f5", "#ef5350", "#ffca28", "#66bb6a"],
                 borderWidth: 0,
               },
             ],
           },
-          options: {
-            plugins: { legend: { display: false } },
-            cutout: "75%",
-          },
+          options: { plugins: { legend: { display: false } }, cutout: "75%" },
           plugins: [centerTextPlugin],
         });
-
-        if (data.revealedAt && data.revealedAt !== lastHistoryId) {
-          const tbody = document.getElementById("history-body");
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${currentAverage}</td><td>${agreement}%</td>`;
-          tbody.prepend(row);
-          lastHistoryId = data.revealedAt;
-        }
       }
 
       function reveal() {
@@ -633,11 +429,8 @@
       }
       function reset() {
         socket.emit("reset-game", currentRoomId);
-      }
-      function changeName() {
-        const n = prompt("Novo nome:");
-        if (n)
-          socket.emit("change-name", { roomId: currentRoomId, newName: n });
+        myVote = null;
+        renderDeck();
       }
     </script>
   </body>
