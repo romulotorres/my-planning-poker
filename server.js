@@ -14,6 +14,19 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sua-senha-aqui";
 const VALID_VOTES = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
 const rooms = {};
 
+// Função para escapar caracteres perigosos
+function sanitize(text) {
+  return text.replace(/[&<>"']/g, function (m) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    }[m];
+  });
+}
+
 app.get("/admin-dashboard", (req, res) => {
   const { pw } = req.query;
   if (pw === ADMIN_PASSWORD) {
@@ -42,8 +55,9 @@ io.on("connection", (socket) => {
         revealedAt: null,
       };
     }
+    const cleanName = sanitize(userName).substring(0, 50);
     rooms[roomId].users[socket.id] = {
-      name: userName.substring(0, 50),
+      name: cleanName.substring(0, 50),
       vote: null,
       isSpectator: !!isSpectator,
     };
@@ -53,14 +67,15 @@ io.on("connection", (socket) => {
 
   socket.on("change-name", ({ roomId, newName }) => {
     if (rooms[roomId] && rooms[roomId].users[socket.id] && newName) {
-      rooms[roomId].users[socket.id].name = newName.substring(0, 50);
+      const newCleanName = sanitize(newName);
+      rooms[roomId].users[socket.id].name = newCleanName.substring(0, 50);
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
   });
 
   socket.on("cast-vote", ({ roomId, vote }) => {
     const room = rooms[roomId];
-    if (room && room.users[socket.id] && !room.users[socket.id].isSpectator) {
+    if (room?.users[socket.id] && !room.users[socket.id].isSpectator) {
       if (VALID_VOTES.includes(vote)) {
         room.users[socket.id].vote = vote;
         io.to(roomId).emit("update-room", room);

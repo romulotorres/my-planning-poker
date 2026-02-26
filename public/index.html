@@ -225,8 +225,8 @@
         border-radius: 6px;
       }
       input[type="checkbox"] {
-        transform: scale(1.5); /* Aumenta o tamanho para 150% do original */
-        margin: 10px; /* Adiciona margem para compensar o tamanho maior */
+        transform: scale(1.5);
+        margin: 10px;
       }
     </style>
   </head>
@@ -466,14 +466,28 @@
           slot.className = "player-slot";
           slot.style.left = x + "px";
           slot.style.top = y + "px";
-          slot.innerHTML = `
-                    <div class="avatar ${id === data.adminId ? "is-adm" : ""}">
-                        ${id === data.adminId ? '<span class="adm-crown">👑</span>' : ""}
-                        ${user.isSpectator ? "👁️" : "👤"}
-                    </div>
-                    <div class="player-name">${user.name}</div>
-                    ${!user.isSpectator ? `<div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">${data.revealed ? user.vote || "-" : ""}</div>` : ""}
-                `;
+
+          // PROTEÇÃO XSS: Usando textContent para o nome
+          const avatarHTML = `
+            <div class="avatar ${id === data.adminId ? "is-adm" : ""}">
+                ${id === data.adminId ? '<span class="adm-crown">👑</span>' : ""}
+                ${user.isSpectator ? "👁️" : "👤"}
+            </div>`;
+
+          const nameElement = document.createElement("div");
+          nameElement.className = "player-name";
+          nameElement.textContent = user.name; // <--- Bloqueio de script aqui
+
+          const cardHTML = !user.isSpectator
+            ? `<div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">
+                ${data.revealed ? user.vote || "-" : ""}
+            </div>`
+            : "";
+
+          slot.innerHTML = avatarHTML;
+          slot.appendChild(nameElement);
+          slot.innerHTML += cardHTML;
+
           container.appendChild(slot);
         });
         document.getElementById("admin-controls").style.display =
@@ -519,12 +533,10 @@
           });
         }
 
-        // Atualiza Tabela Histórico
         const tbody = document.getElementById("history-body");
         const row = tbody.insertRow(0);
         row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>Média: ${currentAverage}</td><td>Votos: ${votes.join(", ")}</td>`;
 
-        // Desenha Gráfico
         if (chart) chart.destroy();
         chart = new Chart(document.getElementById("chartVotes"), {
           type: "doughnut",
@@ -544,8 +556,8 @@
               tooltip: {
                 callbacks: {
                   label: function (context) {
-                    const label = context.label || ""; // O valor da pontuação (ex: 5)
-                    const value = context.raw || 0; // A quantidade de votos (ex: 2)
+                    const label = context.label || "";
+                    const value = context.raw || 0;
                     return `Pontuação ${label} - ${value} votos`;
                   },
                 },
