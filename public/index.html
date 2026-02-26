@@ -40,16 +40,6 @@
         z-index: 9999;
         display: none;
       }
-      .btn-reconnect {
-        background: white;
-        color: var(--danger);
-        border: none;
-        padding: 4px 12px;
-        border-radius: 4px;
-        margin-left: 15px;
-        cursor: pointer;
-        font-weight: bold;
-      }
 
       .poker-area {
         position: relative;
@@ -97,7 +87,6 @@
         justify-content: center;
         font-size: 18px;
         position: relative;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
       }
       .is-adm {
         border-color: var(--gold);
@@ -188,22 +177,18 @@
         border: none;
         font-weight: bold;
         cursor: pointer;
-        transition: 0.2s;
       }
       .btn-copy {
         background: #555;
         color: white;
-        font-size: 12px;
-        padding: 5px 10px;
+        font-size: 11px;
+        padding: 5px 8px;
       }
     </style>
   </head>
   <body>
     <div id="conn-status">
-      <span>⚠️ Conexão perdida.</span>
-      <button class="btn-reconnect" onclick="socket.connect()">
-        Reconectar
-      </button>
+      ⚠️ Conexão perdida. <button onclick="socket.connect()">Reconectar</button>
     </div>
 
     <div
@@ -258,7 +243,7 @@
           style="font-weight: bold; color: var(--gold)"
           >SALA: -</span
         >
-        <button class="btn-action btn-copy" id="btn-copy" onclick="copyLink()">
+        <button class="btn-copy" id="btn-copy" onclick="copyLink()">
           Copiar Link 🔗
         </button>
       </div>
@@ -276,9 +261,6 @@
           text-align: center;
         "
       >
-        <span id="agg-text" style="color: var(--gold); font-size: 13px"
-          >Concordância: 0%</span
-        >
         <canvas id="chartVotes"></canvas>
       </div>
 
@@ -315,12 +297,7 @@
         </div>
         <button
           class="btn-action"
-          style="
-            background: #444;
-            color: white;
-            margin-left: 10px;
-            font-size: 18px;
-          "
+          style="background: #444; color: white; font-size: 18px"
           onclick="changeName()"
         >
           ✏️
@@ -337,12 +314,10 @@
         currentAverage = "-",
         isSpectatorMode = false;
 
-      // Auto-join por Hash na URL
-      if (window.location.hash) {
+      if (window.location.hash)
         document.getElementById("roomName").value = decodeURIComponent(
           window.location.hash.substring(1),
         );
-      }
 
       socket.on("disconnect", () => {
         document.getElementById("conn-status").style.display = "block";
@@ -375,7 +350,6 @@
           .value.trim()
           .replace(/\s+/g, "-");
         isSpectatorMode = document.getElementById("isSpectator").checked;
-
         if (!name || !room) return;
         currentRoomId = room;
         window.location.hash = room;
@@ -383,10 +357,8 @@
           `SALA: ${room.toUpperCase()}`;
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("game-screen").style.display = "block";
-
         if (isSpectatorMode)
           document.getElementById("cards-deck").style.display = "none";
-
         socket.emit("join-room", {
           roomId: room,
           userName: name,
@@ -396,11 +368,14 @@
       }
 
       function copyLink() {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url).then(() => {
-          const btn = document.getElementById("btn-copy");
-          btn.innerText = "Copiado! ✅";
-          setTimeout(() => (btn.innerText = "Copiar Link 🔗"), 2000);
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          document.getElementById("btn-copy").innerText = "Copiado! ✅";
+          setTimeout(
+            () =>
+              (document.getElementById("btn-copy").innerText =
+                "Copiar Link 🔗"),
+            2000,
+          );
         });
       }
 
@@ -449,22 +424,22 @@
                         ${id === data.adminId ? '<span class="adm-crown">👑</span>' : ""}
                         ${user.isSpectator ? "👁️" : "👤"}
                     </div>
-                    <div class="player-name" title="${user.name}">${user.name}</div>
-                    ${
-                      !user.isSpectator
-                        ? `
-                        <div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">
-                            ${data.revealed ? user.vote || "-" : ""}
-                        </div>
-                    `
-                        : ""
-                    }
+                    <div class="player-name">${user.name}</div>
+                    ${!user.isSpectator ? `<div class="card-slot ${data.revealed ? "" : user.vote ? "card-hidden" : ""}">${data.revealed ? user.vote || "-" : ""}</div>` : ""}
                 `;
           container.appendChild(slot);
         });
         document.getElementById("admin-controls").style.display =
           socket.id === data.adminId ? "block" : "none";
-        if (data.revealed) processStats(data);
+        if (data.revealed) {
+          processStats(data);
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            zIndex: 1000,
+          });
+        }
       });
 
       socket.on("clear-local-votes", () => {
@@ -484,7 +459,6 @@
         currentAverage = nums.length
           ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1)
           : "-";
-
         const counts = {};
         votes.forEach((v) => (counts[v] = (counts[v] || 0) + 1));
         if (chart) chart.destroy();
