@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
 
   socket.on("change-name", ({ roomId, newName }) => {
     if (rooms[roomId] && rooms[roomId].users[socket.id] && newName) {
-      rooms[roomId].users[socket.id].name = newName.substring(0, 20); // Limite de caracteres
+      rooms[roomId].users[socket.id].name = newName.substring(0, 50); // Limite de caracteres
       io.to(roomId).emit("update-room", rooms[roomId]);
     }
   });
