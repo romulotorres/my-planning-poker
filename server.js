@@ -10,7 +10,7 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, "public")));
 
 // CONFIGURAÇÃO DE ADMIN
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "314159265";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "sua-senha-aqui";
 const VALID_VOTES = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "☕", "?"];
 const rooms = {};
 

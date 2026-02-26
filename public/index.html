@@ -137,6 +137,20 @@
         background-size: 8px 8px;
       }
 
+      #room-info {
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        background: rgba(30, 30, 30, 0.95);
+        padding: 10px 15px;
+        border-radius: 10px;
+        border: 1px solid #444;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 10;
+      }
+
       .controls {
         background: #181818;
         padding: 15px 0;
@@ -176,11 +190,11 @@
         cursor: pointer;
         transition: 0.2s;
       }
-      .btn-edit {
-        background: #444;
+      .btn-copy {
+        background: #555;
         color: white;
-        margin-left: 10px;
-        font-size: 18px;
+        font-size: 12px;
+        padding: 5px 10px;
       }
     </style>
   </head>
@@ -238,6 +252,17 @@
     </div>
 
     <div id="game-screen" style="display: none; width: 100%">
+      <div id="room-info">
+        <span
+          id="display-room-name"
+          style="font-weight: bold; color: var(--gold)"
+          >SALA: -</span
+        >
+        <button class="btn-action btn-copy" id="btn-copy" onclick="copyLink()">
+          Copiar Link 🔗
+        </button>
+      </div>
+
       <div
         style="
           position: fixed;
@@ -289,9 +314,14 @@
           </button>
         </div>
         <button
-          class="btn-action btn-edit"
+          class="btn-action"
+          style="
+            background: #444;
+            color: white;
+            margin-left: 10px;
+            font-size: 18px;
+          "
           onclick="changeName()"
-          title="Mudar meu nome"
         >
           ✏️
         </button>
@@ -306,6 +336,13 @@
         chart = null,
         currentAverage = "-",
         isSpectatorMode = false;
+
+      // Auto-join por Hash na URL
+      if (window.location.hash) {
+        document.getElementById("roomName").value = decodeURIComponent(
+          window.location.hash.substring(1),
+        );
+      }
 
       socket.on("disconnect", () => {
         document.getElementById("conn-status").style.display = "block";
@@ -333,11 +370,17 @@
 
       function join() {
         const name = document.getElementById("username").value;
-        const room = document.getElementById("roomName").value.trim();
+        const room = document
+          .getElementById("roomName")
+          .value.trim()
+          .replace(/\s+/g, "-");
         isSpectatorMode = document.getElementById("isSpectator").checked;
 
         if (!name || !room) return;
         currentRoomId = room;
+        window.location.hash = room;
+        document.getElementById("display-room-name").innerText =
+          `SALA: ${room.toUpperCase()}`;
         document.getElementById("login-screen").style.display = "none";
         document.getElementById("game-screen").style.display = "block";
 
@@ -350,6 +393,15 @@
           isSpectator: isSpectatorMode,
         });
         renderDeck();
+      }
+
+      function copyLink() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+          const btn = document.getElementById("btn-copy");
+          btn.innerText = "Copiado! ✅";
+          setTimeout(() => (btn.innerText = "Copiar Link 🔗"), 2000);
+        });
       }
 
       function changeName() {
