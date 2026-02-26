@@ -13,8 +13,10 @@
         --gold: #f1c40f;
         --table: #1b5e20;
         --bg: #121212;
-        --card-bg: #1e1e1e;
+        --card-bg: #2e2e2e;
         --danger: #e74c3c;
+        --input: #444;
+        --inputBorder: #000;
       }
       body {
         font-family: "Segoe UI", sans-serif;
@@ -211,6 +213,20 @@
         border: none;
         font-weight: bold;
         cursor: pointer;
+      }
+      .btn-action:hover {
+        opacity: 0.7;
+      }
+      #username,
+      #roomName {
+        background: var(--input);
+        border: 1px solid var(--inputBorder);
+        color: white;
+        border-radius: 6px;
+      }
+      input[type="checkbox"] {
+        transform: scale(1.5); /* Aumenta o tamanho para 150% do original */
+        margin: 10px; /* Adiciona margem para compensar o tamanho maior */
       }
     </style>
   </head>
